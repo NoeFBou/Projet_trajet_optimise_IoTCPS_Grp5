@@ -1,0 +1,24 @@
+services:
+  osrm-backend:
+    image: osrm/osrm-backend
+    container_name: osrm-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./service_vrp/data:/data
+    command: "osrm-routed --algorithm mld /data/data.osrm"
+
+  vrp-api:
+    image: my-vrp-service:latest
+    build:
+      context: ./service_vrp
+      dockerfile: Dockerfile
+    container_name: vrp-api
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - osrm-backend
+    environment:
+      - OSRM_URL=http://osrm-backend:5000

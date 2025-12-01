@@ -1,0 +1,15 @@
+{
+  "bins": [
+    { "id": "client_1", "lat": 48.8566, "lon": 2.3522, "weight": 9},
+    { "id": "client_3", "lat": 48.8530, "lon": 2.3690, "weight": 5 },
+    { "id": "client_2", "lat": 48.8584, "lon": 2.2945, "weight": 10 },
+    { "id": "client_4", "lat": 48.8858, "lon": 2.3430, "weight": 3 }
+  ],
+  "trucks": [
+    { "id": "camion_rouge", "capacity": 15 },
+    { "id": "camion_bleu", "capacity": 15 }
+  ],
+  "depot": [
+    48.8566, 2.3522
+  ]
+}

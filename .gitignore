@@ -1,2 +1,5 @@
-*.pbf
+#*.pbf
 /.idea
+service_vrp/data/*.osrm*
+service_vrp/data/*.lua
+service_vrp/data/*.stxxl

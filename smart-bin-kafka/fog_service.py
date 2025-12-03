@@ -9,6 +9,7 @@ KAFKA_SERVER = "localhost:9092"
 
 
 INFLUX_URL = "http://localhost:8086"
+
 INFLUX_TOKEN = "my-super-secret-auth-token"
 INFLUX_ORG = "smartcity"
 INFLUX_BUCKET = "bins"
@@ -23,46 +24,59 @@ except Exception as e:
     exit()
 
 print(f" Démarrage du Consumer Kafka sur {KAFKA_SERVER}...")
-consumer = KafkaConsumer(
-    TOPIC_NAME,
-    bootstrap_servers=KAFKA_SERVER,
-    auto_offset_reset='latest',
-    value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-)
+try:
+    consumer = KafkaConsumer(
+        TOPIC_NAME,
+        bootstrap_servers=KAFKA_SERVER,
+        auto_offset_reset='latest',
+        value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+    )
+except Exception as e:
+    print(f" Erreur Connexion Kafka : {e}")
+    exit()
 
 print(" En attente de données...")
 
 try:
     for message in consumer:
         data = message.value
-        bin_id = data['bin_id']
+
+        bin_id = data.get('bin_id', 'Unknown')
+        bin_type = data.get('bin_type', 'Unknown')
         
+
         us_sensor = next((s for s in data['sensors'] if s['id'] == 'US-01'), None)
         weight_sensor = next((s for s in data['sensors'] if s['type'] == 'load_cell'), None)
         
         if us_sensor and weight_sensor:
-            niveau = us_sensor['value']
-            poids = weight_sensor['value']
+
+            niveau = float(us_sensor['value'])
+            poids = float(weight_sensor['value'])
             
-            print(f" [Kafka] Reçu {bin_id}: Niv={niveau}cm, Poids={poids}kg")
+            print(f" [Kafka] Reçu {bin_id} ({bin_type}): Niv={niveau}cm, Poids={poids}kg")
             
-            
+
             anomalie = False
-            if niveau > 80 and poids < 2.0:
-                print(f" ANOMALIE DÉTECTÉE ! (Faux positif probable)")
+
+            if niveau > 90 and poids < 2.0:
+                print(f" ANOMALIE DÉTECTÉE ! (Incohérence Niveau/Poids)")
                 anomalie = True
             
-            
+
+
             point = Point("bin_status") \
                 .tag("bin_id", bin_id) \
-                .tag("type", data['bin_type']) \
+                .tag("type", bin_type) \
                 .field("fill_level", niveau) \
                 .field("weight", poids) \
-                .field("battery", data['status']['battery_level']) \
-                .field("anomaly", int(anomalie)) # 0 ou 1
+                .field("battery", int(data['status']['battery_level'])) \
+                .field("anomaly", int(anomalie))
             
-            write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
-            print(" [InfluxDB] Donnée sauvegardée.")
+            try:
+                write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
+                print("    [InfluxDB] Sauvegardé.")
+            except Exception as e:
+                print(f"  Erreur écriture InfluxDB: {e}")
 
 except KeyboardInterrupt:
     print("\nArrêt du service.")

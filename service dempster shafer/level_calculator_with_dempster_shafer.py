@@ -4,7 +4,6 @@ from pyds import MassFunction
 class WasteBinMonitor:
     def __init__(self):
         self.max_volume = 100
-        # Frame of Discernment (Tous les états possibles)
         self.states = {'E1', 'E2', 'E3', 'E4', 'E5'}
 
         self.profiles = {
@@ -15,18 +14,9 @@ class WasteBinMonitor:
         }
 
     def discount_mass(self, mf, trust_factor):
-        """
-        Implémentation manuelle du discounting.
-        Transfère (1 - trust) de la masse vers l'ignorance totale (Omega).
-        """
-        omega = frozenset(self.states)  # L'ensemble global {E1, E2, ... E5}
 
-        # 1. On réduit la croyance de toutes les hypothèses actuelles
-        # L'opérateur * sur une MassFunction multiplie toutes les masses par le scalaire
+        omega = frozenset(self.states)
         m_new = mf * trust_factor
-
-        # 2. On ajoute la différence à l'ensemble Omega (Ignorance)
-        # Note: m_new[omega] += ... gère automatiquement l'ajout même si la clé n'existe pas
         m_new[omega] += (1.0 - trust_factor)
 
         return m_new
@@ -34,8 +24,6 @@ class WasteBinMonitor:
     def get_mass_from_weight(self, current_weight, trust_factor, density):
         estimated_fill = current_weight / (density * self.max_volume)
 
-        # IMPORTANT : On utilise directement MassFunction et des sets {'E5'}
-        # pour éviter la confusion entre string "E5" et ensemble de chars {'E', '5'}
         m = MassFunction()
 
         if estimated_fill > 0.9:
@@ -62,7 +50,6 @@ class WasteBinMonitor:
             m[{'E2'}] = 0.3
 
         m.normalize()
-        # Appel de notre méthode custom de discounting
         return self.discount_mass(m, trust_factor)
 
     def get_mass_from_us(self, us1_dist, us2_dist, trust_factor):
@@ -113,7 +100,6 @@ class WasteBinMonitor:
         current_trust = trust_factor * 0.5 if inconsistency else trust_factor
 
         if ir75 == 1:
-            # Ici on utilise un set de strings, pyds va le convertir en frozenset correctement
             m[{'E3', 'E4', 'E5'}] = 0.9
         elif ir50 == 1:
             m[{'E2', 'E3'}] = 0.8
@@ -174,9 +160,7 @@ class WasteBinMonitor:
 
         return best_state_name, m_final
 
-# ==========================================
-# EXEMPLE D'UTILISATION
-# ==========================================
+
 
 monitor = WasteBinMonitor()
 

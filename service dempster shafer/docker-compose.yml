@@ -4,7 +4,7 @@ services:
   # --- Service 1 : InfluxDB (Base de données) ---
   influxdb:
     image: influxdb:2.7
-    container_name: bin_influxdb
+    container_name: influxdb
     ports:
       - "8086:8086"
     volumes:

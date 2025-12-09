@@ -2,13 +2,18 @@ import os
 import time
 from typing import Optional
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
+# Importation de votre logique métier
 from level_calculator_with_dempster_shafer import WasteBinMonitor
 
-app = FastAPI(title="Service de Fusion de Données Poubelles")
+app = FastAPI(
+    title="Waste Bin Fusion API",
+    description="API de fusion de données capteurs utilisant la théorie de Dempster-Shafer pour déterminer le niveau de remplissage.",
+    version="1.0.0"
+)
 
 INFLUX_URL = os.getenv("INFLUX_URL", "http://influxdb:8086")
 INFLUX_TOKEN = os.getenv("INFLUX_TOKEN", "my-super-secret-auth-token")
@@ -17,22 +22,41 @@ INFLUX_BUCKET = os.getenv("INFLUX_BUCKET", "waste_management")
 
 monitor = WasteBinMonitor()
 
-
 class BinDataInput(BaseModel):
-    bin_id: str
-    statut: str
-    bin_type: str
+    bin_id: str = Field(..., description="Identifiant unique de la poubelle", example="BIN-774")
+    statut: str = Field("normal", description="Statut opérationnel", example="normal")
+    bin_type: str = Field(..., description="Type de déchet (verre, plastique, organique...)", example="verre")
 
-    weight_value: float
-    us_value1: float
-    us_value2: float
-    ir_value25: int
-    ir_value50: int
-    ir_value75: int
+    # Capteurs
+    weight_value: float = Field(..., description="Poids mesuré en kg", example=35.2)
+    us_value1: float = Field(..., description="Distance Ultrason 1 (cm)", example=15.0)
+    us_value2: float = Field(..., description="Distance Ultrason 2 (cm)", example=14.5)
+    ir_value25: int = Field(..., description="Capteur IR 25% (0 ou 1)", example=1)
+    ir_value50: int = Field(..., description="Capteur IR 50% (0 ou 1)", example=1)
+    ir_value75: int = Field(..., description="Capteur IR 75% (0 ou 1)", example=0)
 
-    Battery_level: float
-    GPS_value: str
-    Measurement_date: str
+    # Métadonnées
+    Battery_level: float = Field(..., description="Niveau de batterie (%)", example=88.5)
+    GPS_value: str = Field(..., description="Coordonnées GPS", example="43.616,7.055")
+    Measurement_date: str = Field(..., description="Timestamp de la mesure", example="2023-12-01T14:30:00Z")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "bin_id": "BIN-TEST-01",
+                "statut": "normal",
+                "bin_type": "plastique",
+                "weight_value": 2.5,
+                "us_value1": 5,
+                "us_value2": 8,
+                "ir_value25": 1,
+                "ir_value50": 1,
+                "ir_value75": 1,
+                "Battery_level": 92.0,
+                "GPS_value": "48.85,2.35",
+                "Measurement_date": "2023-10-27T10:00:00Z"
+            }
+        }
 
 
 class BinDataOutput(BaseModel):
@@ -62,29 +86,29 @@ def write_to_influx(data: BinDataInput, level_code: str, level_desc: str, confli
             .tag("bin_id", data.bin_id) \
             .tag("bin_type", data.bin_type) \
             .tag("statut", data.statut) \
-            .field("weight", data.weight_value) \
-            .field("ultrasound_1", data.us_value1) \
-            .field("ultrasound_2", data.us_value2) \
+            .field("weight", float(data.weight_value)) \
             .field("level_code", level_code) \
             .field("level_desc", level_desc) \
-            .field("battery_level", data.Battery_level) \
-            .field("conflict_mass", conflict)
+            .field("conflict", float(conflict))
 
         write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
         client.close()
     except Exception as e:
-        print(f"Erreur d'écriture InfluxDB: {e}")
+        print(f"Warning: InfluxDB write failed: {e}")
 
 
-@app.post("/fusion", response_model=BinDataOutput)
+@app.post("/fusion", response_model=BinDataOutput, tags=["Calcul Niveau"])
 def compute_bin_level(input_data: BinDataInput):
     """
-    Reçoit les données capteurs, fusionne avec Dempster-Shafer,
-    enregistre dans InfluxDB et retourne le résultat.
+    **Calcule le niveau de remplissage** à partir des capteurs bruts.
+
+    - Effectue la fusion de données (Poids, US, IR)
+    - Enregistre le résultat dans InfluxDB
+    - Retourne l'état estimé (E1 à E5)
     """
 
     monitor_inputs = {
-        'type': input_data.bin_type.lower(),  # 'verre', 'plastique', etc.
+        'type': input_data.bin_type.lower(),
         'weight': input_data.weight_value,
         'us1': input_data.us_value1,
         'us2': input_data.us_value2,
@@ -94,11 +118,13 @@ def compute_bin_level(input_data: BinDataInput):
     }
 
     try:
-
         etat, m_final = monitor.compute_level(monitor_inputs)
+
+        conflit = m_final.get(frozenset(), 0.0)
+
         description = STATE_TRANSLATION.get(etat, "Inconnu")
 
-        write_to_influx(input_data, str(etat), description)
+        write_to_influx(input_data, str(etat), description, conflit)
 
         return BinDataOutput(
             bin_id=input_data.bin_id,
@@ -109,9 +135,9 @@ def compute_bin_level(input_data: BinDataInput):
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur de calcul: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur interne: {str(e)}")
 
 
-@app.get("/health")
+@app.get("/health", tags=["Système"])
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "service": "WasteBinMonitor"}

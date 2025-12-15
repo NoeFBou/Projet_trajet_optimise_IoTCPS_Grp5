@@ -53,14 +53,14 @@ services:
     image: eclipse-mosquitto
     container_name: mosquitto
     ports:
-      - "1884:1883" # Port 1884 pour accès externe, 1883 en interne
+      - "1884:1883" 
       - "9001:9001"
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
 
-  # --- VOS SERVICES PYTHON ---
+  # --- SERVICES PYTHON ---
 
   sensor-raw:
     build: .

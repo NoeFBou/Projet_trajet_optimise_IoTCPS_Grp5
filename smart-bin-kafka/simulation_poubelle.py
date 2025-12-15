@@ -4,110 +4,11 @@ import random
 import statistics
 from kafka import KafkaProducer
 
-
+# --- CONFIGURATION KAFKA ---
 TOPIC_NAME = "bin-sensor-data"
-
 KAFKA_SERVER = "localhost:9092" 
 
-
-POUBELLES_CONFIG = [
-    {"id": "PBL-SOPH-12A7", "type": "Verre", "coords": {"lat": 43.6158, "lon": 7.0722}},
-    {"id": "PBL-ANT-03X9",  "type": "Plastique", "coords": {"lat": 43.5800, "lon": 7.1200}},
-    {"id": "PBL-NICE-55B2", "type": "Papier", "coords": {"lat": 43.7102, "lon": 7.2620}},
-    {"id": "PBL-CANNES-01", "type": "Verre", "coords": {"lat": 43.5528, "lon": 7.0174}},
-    {"id": "PBL-GRASSE-99", "type": "OrdureMenagere", "coords": {"lat": 43.6602, "lon": 6.9264}}
-]
-
-class EdgeProcessor:
-    def __init__(self):
-
-        self.history = {} 
-
-    def _generer_mesure_brute(self, poubelle_config):
-        """Simule le capteur physique (avec du bruit possible sur les 2 capteurs)"""
-        
-   
-        niveau_reel = random.randint(20, 80)
-
-        if random.random() < 0.1:
-            niveau_mesure = random.choice([0, 150]) 
-        else:
-            niveau_mesure = niveau_reel + random.randint(-2, 2)
-
-
-        poids_reel = random.uniform(5.0, 30.0)
-
-        if random.random() < 0.1:
-            poids_mesure = 0.0
-        else:
-            poids_mesure = poids_reel + random.uniform(-0.5, 0.5)
-        
-        return {
-            "us_raw": niveau_mesure,
-            "weight_raw": round(poids_mesure, 2),
-            "battery_raw": random.randint(20, 100)
-        }
-
-    def filtrer_donnees(self, bin_id, raw_data):
-       
-        if bin_id not in self.history:
-            self.history[bin_id] = {'us': [], 'weight': []}
-
-      
-        val_us = raw_data['us_raw']
-        val_weight = raw_data['weight_raw']
-        
-        hist_us = self.history[bin_id]['us']
-        hist_weight = self.history[bin_id]['weight']
-
-     
-        if len(hist_us) >= 3:
-            moyenne_us = statistics.mean(hist_us)
-            if abs(val_us - moyenne_us) > 30: # Écart > 30cm = Bruit
-                print(f"   [Filtre US] Rejet {val_us}cm. Remplacement par {moyenne_us:.1f}cm")
-                val_us = round(moyenne_us, 1)
-        
-       
-        if len(hist_weight) >= 3:
-            moyenne_weight = statistics.mean(hist_weight)
-            if abs(val_weight - moyenne_weight) > 10.0: # Écart > 10kg = Bruit
-                print(f"   [Filtre Poids] Rejet {val_weight}kg. Remplacement par {moyenne_weight:.1f}kg")
-                val_weight = round(moyenne_weight, 2)
-
-        # Mise à jour des historiques (fenêtre glissante de 5)
-        hist_us.append(val_us)
-        hist_weight.append(val_weight)
-        
-        if len(hist_us) > 5: hist_us.pop(0)
-        if len(hist_weight) > 5: hist_weight.pop(0)
-            
-        return {
-            "us_filtered": val_us,
-            "weight_filtered": val_weight,
-            "battery": raw_data['battery_raw']
-        }
-
-    def annoter_donnees(self, config, filtered_data):
-        """SERVICE D'ANNOTATION"""
-        annotation = {
-            "bin_id": config["id"],
-            "bin_type": config["type"],
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "GPS_value": config["coords"],
-            "sensors": [
-                {"id": "US-01", "type": "ultrasonic", "value": filtered_data["us_filtered"], "unit": "cm"},
-                {"type": "load_cell", "value": filtered_data["weight_filtered"], "unit": "kg"}
-            ],
-            "status": {
-                "battery_level": filtered_data["battery"],
-                "quality": "filtered_v2"
-            }
-        }
-        return annotation
-
-
-
-print(f" Démarrage Edge Simulation (5 Poubelles) sur {KAFKA_SERVER}...")
+print(f" Démarrage de la Simulation Avancée sur {KAFKA_SERVER}...")
 
 try:
     producer = KafkaProducer(
@@ -116,37 +17,147 @@ try:
     )
     print(" Connecté à Kafka.")
 except Exception as e:
-    print(f" Erreur Kafka : {e}")
+    print(f"Erreur Kafka : {e}")
     exit()
 
-processor = EdgeProcessor()
+# --- CONFIGURATION PHYSIQUE STANDARD ---
+STANDARD_DIMS = {"h": 93, "w": 48, "d": 55}
 
-print(" Début de la collecte (Intervalle: 60s)...")
+# Liste des poubelles
+POUBELLES_CONFIG = [
+    # 1. Verre (Lourd )
+    {"id": "PBL-SOPH-01", "type": "Verre", "daily_growth": 10, "density": 0.35, 
+     "dims": STANDARD_DIMS, "coords": {"lat": 43.6165, "lon": 7.0725}},
+    
+    # 2. Recyclable (Léger)
+    {"id": "PBL-SOPH-02", "type": "Recyclable", "daily_growth": 40, "density": 0.05, 
+     "dims": STANDARD_DIMS, "coords": {"lat": 43.6155, "lon": 7.0715}},
+    
+    # 3. Organique (Très Lourd )
+    {"id": "PBL-SOPH-03", "type": "Organique", "daily_growth": 50, "density": 0.50, 
+     "dims": STANDARD_DIMS, "coords": {"lat": 43.6170, "lon": 7.0730}},
+    
+    # 4. Recyclable (Léger )
+    {"id": "PBL-SOPH-04", "type": "Recyclable", "daily_growth": 25, "density": 0.05, 
+     "dims": STANDARD_DIMS, "coords": {"lat": 43.6150, "lon": 7.0710}},
+    
+    # 5. Verre (Lourd)
+    {"id": "PBL-SOPH-05", "type": "Verre", "daily_growth": 15, "density": 0.35, 
+     "dims": STANDARD_DIMS, "coords": {"lat": 43.6160, "lon": 7.0740}}
+]
+
+# --- ÉTAT INTERNE ---
+bin_states = {}
+for p in POUBELLES_CONFIG:
+    bin_states[p['id']] = {
+        "current_level": random.randint(0, 50), 
+        "battery": random.randint(80, 100)
+    }
+
+UPDATE_INTERVAL_SEC = 2
+DAY_DURATION_SEC = 30
+TICKS_PER_DAY = DAY_DURATION_SEC / UPDATE_INTERVAL_SEC
+
+class EdgeSensorSystem:
+    def _simuler_rafale_brute(self, valeur_theorique, type_capteur):
+        """Génère 10 valeurs brutes (avec bruit possible)"""
+        mesures = []
+        for _ in range(10):
+            valeur = valeur_theorique
+            
+            # Bruit naturel
+            if type_capteur == "us": valeur += random.uniform(-1.0, 1.0)
+            elif type_capteur == "weight": valeur += random.uniform(-0.1, 0.1)
+
+            # Bruit accidentel (10% de chance)
+            if random.random() < 0.1:
+                if type_capteur == "us": valeur = random.choice([0, 500, valeur + 30])
+                elif type_capteur == "weight": valeur += 5.0
+
+            mesures.append(max(0, round(valeur, 2)))
+        return mesures
+
+    def _filtrer_et_moyenniser(self, liste_valeurs):
+        """Filtre Médian"""
+        if not liste_valeurs: return 0.0
+        mediane = statistics.median(liste_valeurs)
+        valeurs_propres = [v for v in liste_valeurs if abs(v - mediane) <= 10.0]
+        if not valeurs_propres: valeurs_propres = [mediane]
+        return round(statistics.mean(valeurs_propres), 2)
+
+    def acquisition_cycle(self, config, state):
+        """Calcul Physique complet"""
+        
+        #  Calcul du Volume Actuel (Litres)
+        vol_total_cm3 = config['dims']['h'] * config['dims']['w'] * config['dims']['d']
+        vol_total_litres = vol_total_cm3 / 1000.0
+        
+        # Volume rempli actuel
+        vol_actuel_litres = vol_total_litres * (state['current_level'] / 100.0)
+
+        # Calcul Physique Théorique
+        # Distance = Hauteur totale - Hauteur des déchets
+        hauteur_dechets = (state['current_level'] / 100.0) * config['dims']['h']
+        dist_theorique = config['dims']['h'] - hauteur_dechets
+        
+        # Poids = Volume (L) * Densité (kg/L)
+        poids_theorique = vol_actuel_litres * config['density']
+
+        # Acquisition Capteurs (Rafale)
+        us_final = self._filtrer_et_moyenniser(self._simuler_rafale_brute(dist_theorique, "us"))
+        poids_final = self._filtrer_et_moyenniser(self._simuler_rafale_brute(poids_theorique, "weight"))
+        
+        #JSON Final
+        return {
+            "bin_id": config["id"],
+            "bin_type": config["type"],
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "GPS_value": config["coords"],
+            "dimensions": config["dims"], 
+            "sensors": [
+                {"id": "US-01", "type": "ultrasonic", "value": us_final, "unit": "cm"},
+                {"id": "US-02", "type": "ultrasonic", "value": us_final, "unit": "cm"},
+                {"id": "IR-25", "type": "infrared", "value": 1 if state['current_level'] > 25 else 0, "threshold": 25},
+                {"id": "IR-50", "type": "infrared", "value": 1 if state['current_level'] > 50 else 0, "threshold": 50},
+                {"id": "IR-75", "type": "infrared", "value": 1 if state['current_level'] > 75 else 0, "threshold": 75},
+                
+                {"id": "LC", "type": "load_cell", "value": poids_final, "unit": "kg"}
+            ],
+            "status": {"battery_level": int(state['battery'])}
+        }
+
+# --- MAIN LOOP ---
+sensor_system = EdgeSensorSystem()
 
 try:
     while True:
-
+        print("\n" + "="*60)
         for config in POUBELLES_CONFIG:
+            state = bin_states[config['id']]
             
+            # Simulation vie
+            growth = (config['daily_growth'] / TICKS_PER_DAY) * random.uniform(0.8, 1.2)
+            state['current_level'] += growth
             
-            raw = processor._generer_mesure_brute(config)
+            if state['current_level'] >= 100: 
+                print(f" VIDAGE {config['id']} (Capacité: {int((config['dims']['h']*config['dims']['w']*config['dims']['d'])/1000)}L)")
+                state['current_level'] = 0.0
             
+            state['battery'] -= 0.05
+            if state['battery'] <= 0: state['battery'] = 100
+
+            # Acquisition
+            message = sensor_system.acquisition_cycle(config, state)
+            producer.send(TOPIC_NAME, value=message)
             
-            clean_data = processor.filtrer_donnees(config["id"], raw)
+            # Affichage console détaillé
+            poids = next(s['value'] for s in message['sensors'] if s.get('id') == 'LC')
+            dist = next(s['value'] for s in message['sensors'] if s['id']=='US-01')
             
-           
-            message_final = processor.annoter_donnees(config, clean_data)
+            print(f"{config['id']} ({config['type']}): {int(state['current_level'])}% Plein | Dist {dist}cm | Poids {poids}kg")
             
-            
-            producer.send(TOPIC_NAME, value=message_final)
-            
-            print(f" [EDGE] {config['id']} ({config['type']}) : Niv {clean_data['us_filtered']}cm | Poids {clean_data['weight_filtered']}kg")
-        
         producer.flush()
-        
-        
-        print(" Attente 60 secondes...")
-        time.sleep(60)
+        time.sleep(UPDATE_INTERVAL_SEC)
 
 except KeyboardInterrupt:
     print("\nArrêt.")

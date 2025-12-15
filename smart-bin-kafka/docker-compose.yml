@@ -34,22 +34,65 @@ services:
     depends_on:
       - kafka
 
-
   influxdb:
     image: influxdb:2.7
     container_name: influxdb
     ports:
       - "8086:8086"
     environment:
-
       DOCKER_INFLUXDB_INIT_MODE: setup
       DOCKER_INFLUXDB_INIT_USERNAME: admin
       DOCKER_INFLUXDB_INIT_PASSWORD: password123
       DOCKER_INFLUXDB_INIT_ORG: smartcity
       DOCKER_INFLUXDB_INIT_BUCKET: bins
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-secret-auth-token
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: 5QsGX__Bqx0w46bWf6rX2zP_oWHthKsmq5Z7re-3FsBM-gsy5OoO2VPCFS1HGSknV_Yy7uPPsH_9iqbZs-_kYw==
     volumes:
       - influxdb_data:/var/lib/influxdb2
 
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    ports:
+      - "1884:1883" # Port 1884 pour accès externe, 1883 en interne
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+  # --- VOS SERVICES PYTHON ---
+
+  sensor-raw:
+    build: .
+    container_name: sensor-raw
+    command: python -u 1_sensor_raw.py
+    depends_on:
+      - mosquitto
+
+  edge-computer:
+    build: .
+    container_name: edge-computer
+    command: python -u 2_edge_computer.py
+    depends_on:
+      - mosquitto
+
+  bridge-service:
+    build: .
+    container_name: bridge-service
+    command: python -u 3_bridge_mqtt_kafka.py
+    depends_on:
+      - mosquitto
+      - kafka
+
+  cloud-ingest:
+    build: .
+    container_name: cloud-ingest
+    command: python -u 4_cloud_ingest.py
+    depends_on:
+      - kafka
+      - influxdb
+
 volumes:
   influxdb_data:
+  mosquitto_data:
+  mosquitto_log:

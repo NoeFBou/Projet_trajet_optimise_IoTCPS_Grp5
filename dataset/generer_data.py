@@ -2,7 +2,8 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import osmnx as ox
-
+import json
+import random
 # --- CONFIGURATION ---
 # Assurez-vous que le nom du fichier est correct
 FICHIER_BD_TOPO = "BDT_3-5_GPKG_LAMB93_D006-ED2025-09-15.gpkg"
@@ -130,3 +131,102 @@ df_csv["longitude"] = df_csv.geometry.centroid.x
 df_csv.drop(columns="geometry").to_csv(output_csv, index=False)
 
 print("Terminé ! Fichiers générés avec succès.")
+
+
+# --- CONFIGURATION ---
+CAPACITE_STANDARD_LITRES = 660  # Taille standard d'un bac 4 roues
+
+PROPS_DECHETS = {
+    "Verre": {"density": 0.35, "part_volume": 0.15},
+    "Recyclable": {"density": 0.05, "part_volume": 0.40},
+    "Organique": {"density": 0.50, "part_volume": 0.30},
+    "TousDechets": {"density": 0.15, "part_volume": 0.60}
+}
+
+output_json_iot = "simulation_iot_poubelles.json"
+liste_capteurs = []
+
+print("6. Génération des capteurs IoT (avec niveaux aléatoires)...")
+
+# Barre de progression si disponible
+try:
+    from tqdm import tqdm
+
+    iterator = tqdm(gdf_nice.iterrows(), total=len(gdf_nice))
+except ImportError:
+    iterator = gdf_nice.iterrows()
+
+for idx, row in iterator:
+
+    # --- 1. IDENTIFICATION ---
+    # On crée un ID court basé sur le cleabs IGN (ex: BAT-X8J9)
+    bat_id = str(row.get("cleabs", f"BAT-{idx}"))[-6:]
+
+    # Coordonnées arrondies (4 décimales = ~10m de précision, suffit largement)
+    lat = round(row.geometry.centroid.y, 5)
+    lon = round(row.geometry.centroid.x, 5)
+
+    # Volume total produit par le bâtiment par jour
+    volume_jour_total = row["volume_dechet_L_semaine"] / 7.0
+
+    # Filtre: on ignore les bâtiments qui produisent moins de 2L par jour (transfos, abris...)
+    if volume_jour_total < 2:
+        continue
+
+    # --- 2. SCÉNARIOS DE TRI ---
+    # Si resto ou gros volume ou hasard 40% -> Tri complet
+    if row.get("nb_restos", 0) > 0 or volume_jour_total > 150 or random.random() < 0.4:
+        types_bacs = ["Verre", "Recyclable", "Organique"]
+    else:
+        types_bacs = ["TousDechets", "Recyclable"]
+
+    # --- 3. GÉNÉRATION DES BACS ---
+    for type_dechet in types_bacs:
+
+        props = PROPS_DECHETS[type_dechet]
+
+        # Part du volume total dédié à ce type de déchet
+        part = props["part_volume"]
+        # Ajustement pour le scénario "TousDechets" + "Recyclable"
+        if "TousDechets" in types_bacs and type_dechet == "Recyclable":
+            part = 0.4  # Le reste va dans le tout-venant
+
+        # Calcul de la croissance quotidienne (Daily Growth)
+        # On ajoute un bruit de +/- 15% pour varier les vitesses de remplissage
+        random_noise = random.uniform(0.85, 1.15)
+        daily_growth = int(volume_jour_total * part * random_noise)
+
+        # Sécurité minimum
+        if daily_growth < 1: daily_growth = 1
+
+        # NIVEAU ACTUEL (Current Level)
+        # On simule que la poubelle est déjà partiellement remplie (entre 0% et 85%)
+        # Cela désynchronise les collectes dès le début de la simulation
+        start_percentage = random.uniform(0.0, 0.85)
+        current_level = int(CAPACITE_STANDARD_LITRES * start_percentage)
+
+        # Création de l'objet JSON final
+        capteur = {
+            "id": f"PBL-{bat_id}-{type_dechet[:3].upper()}",  # ex: PBL-A1B2-VER
+            "type": type_dechet,
+            "daily_growth": daily_growth,  # Litres ajoutés par jour
+            "current_level": current_level,  # Litres actuellement dedans
+            "max_capacity": CAPACITE_STANDARD_LITRES,  # 660L
+            "density": props["density"],
+            "dims": "STANDARD_DIMS",
+            "coords": {
+                "lat": lat,
+                "lon": lon
+            }
+        }
+
+        liste_capteurs.append(capteur)
+
+# --- SAUVEGARDE ---
+print(f"Génération terminée : {len(liste_capteurs)} poubelles simulées.")
+print(f"Écriture du fichier {output_json_iot}...")
+
+with open(output_json_iot, "w", encoding="utf-8") as f:
+    json.dump(liste_capteurs, f, ensure_ascii=False, indent=2)
+
+print("Terminé ! Prêt pour la simulation.")

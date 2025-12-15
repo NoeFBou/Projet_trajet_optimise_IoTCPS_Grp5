@@ -197,7 +197,6 @@ for idx, row in iterator:
     for type_dechet in types_bacs:
         props = PROPS_DECHETS[type_dechet]
 
-        # Ajustement part volume
         part = props["part_volume"]
         if "TousDechets" in types_bacs and type_dechet == "Recyclable":
             part = 0.4
@@ -207,13 +206,10 @@ for idx, row in iterator:
         daily_growth = int(volume_jour * part * random_noise)
         if daily_growth < 1: daily_growth = 1
 
-        # Vérification de cohérence :
-        # Si le daily_growth est supérieur à la capacité du bac (ça déborde en 1 jour),
-        # on force un plus gros bac.
+
         if daily_growth > capacite_bac:
             capacite_bac = 660
 
-            # Niveau initial aléatoire
         start_percentage = random.uniform(0.0, 0.75)
         current_level = int(capacite_bac * start_percentage)
 

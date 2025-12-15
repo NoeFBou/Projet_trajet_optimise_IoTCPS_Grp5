@@ -186,3 +186,5 @@ try:
 
 except Exception as e:
     print(f"Erreur lors de l'exécution : {e}")
+
+

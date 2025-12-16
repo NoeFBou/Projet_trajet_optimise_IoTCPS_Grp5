@@ -49,13 +49,7 @@ for message in consumer:
         us_val = next((s['value'] for s in data['sensors'] if s['id'] == 'US-01'), 0)
         weight_val = next((s['value'] for s in data['sensors'] if s.get('id') == 'LC'), 0)
         
-        # Détection Anomalie (Logique Métier)
-        anomalie = 0
-        if us_val > 90 and weight_val < 2.0:
-            print(f"⚠️  ANOMALIE: {bin_id} (Plein mais léger)")
-            anomalie = 1
-        
-        # Création du Point InfluxDB (TYPAGE FLOAT FORCÉ)
+
         point = Point("bin_status") \
             .tag("bin_id", bin_id) \
             .tag("type", bin_type) \

@@ -26,7 +26,7 @@ def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload.decode())
         
-        # Envoi vers Kafka
+
         producer.send(KAFKA_TOPIC, value=data)
         producer.flush()
         print(f"[Bridge] {data['bin_id']} -> Kafka")
@@ -34,10 +34,10 @@ def on_message(client, userdata, msg):
     except Exception as e:
         print(f"Erreur transfert: {e}")
 
-# --- BOUCLE PRINCIPALE CORRIGÉE ---
+
 client = mqtt.Client()
 
-# !!! C'EST ICI QU'IL FALLAIT AJOUTER CETTE LIGNE !!!
+
 client.on_message = on_message 
 
 client.connect(MQTT_BROKER, 1883, 60)

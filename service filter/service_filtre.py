@@ -4,7 +4,7 @@ import time
 import os
 import paho.mqtt.client as mqtt
 from kafka import KafkaProducer
-
+from kafka.errors import NoBrokersAvailable
 # --- CONFIGURATION ---
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_TOPIC_IN = "bin/raw_signals"
@@ -28,6 +28,7 @@ KAFKA_TOPIC_OUT = "topic-filtered-data"
 
 # --- 1. LOGIQUE DE FILTRAGE (Votre logique existante) ---
 
+# --- LOGIQUE DE FILTRAGE ---
 def filtrer_valeurs_aberrantes(liste_valeurs, seuil_tolerance=10.0):
     """Filtre Médian + Suppression Outliers + Moyenne"""
     if not liste_valeurs: return 0.0
@@ -38,62 +39,95 @@ def filtrer_valeurs_aberrantes(liste_valeurs, seuil_tolerance=10.0):
     if not valeurs_propres: return round(mediane, 2)
     return round(statistics.mean(valeurs_propres), 2)
 
-
+# --- CONNEXION KAFKA ---
 print(f"[Filtre] Connexion à Kafka ({KAFKA_BROKER})...")
-producer = KafkaProducer(
-    bootstrap_servers=[KAFKA_BROKER],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+producer = None
+while producer is None:
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers=KAFKA_BROKER,
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+        print("[Filtre] Connexion Kafka RÉUSSIE !")
+    except NoBrokersAvailable:
+        print("[Filtre] Kafka pas encore prêt... Nouvelle tentative dans 5 secondes.")
+        time.sleep(5)
+    except Exception as e:
+        print(f"[Filtre] Autre erreur Kafka : {e}")
+        time.sleep(5)
 
 
 # --- 3. CALLBACK MQTT ---
 def on_message(client, userdata, msg):
     try:
-        # Décodage du message brut (venant du simulateur)
+        # Décodage du message
         raw = json.loads(msg.payload.decode())
         bin_id = raw.get('id')
 
         # A. Filtrage des données brutes
-        # Le simulateur envoie une liste de 10 valeurs, on en tire une moyenne propre
         us_clean = filtrer_valeurs_aberrantes(raw.get('raw_us', []), 20.0)
         weight_clean = filtrer_valeurs_aberrantes(raw.get('raw_weight', []), 2.0)
-
-        # Récupération des données IR (pas de filtrage statistique, juste lecture)
         ir_data = raw.get('ir_levels', {"25_pct": 0, "50_pct": 0, "75_pct": 0})
 
         # B. Construction de l'objet "propre" pour Kafka
-        # On garde la structure attendue par le service de fusion que je vous ai donné avant
         processed_data = {
             "bin_id": bin_id,
             "type": raw.get('type', 'tout_type'),
             "zone": raw.get('zone', "Unknown"),
             "coords": raw.get('coords', {'lat': 0, 'lon': 0}),
             "timestamp": time.time(),
-
-            # On structure les mesures
             "measurements": {
-                "fill_level_cm": us_clean,  # Distance ultrason filtrée (unique)
-                "weight_kg": weight_clean,  # Poids filtré (unique)
-                "fill_alerts": {  # États IR
+                "fill_level_cm": us_clean,
+                "weight_kg": weight_clean,
+                "fill_alerts": {
                     "level_25": bool(ir_data.get("25_pct")),
                     "level_50": bool(ir_data.get("50_pct")),
                     "level_75": bool(ir_data.get("75_pct"))
                 }
             },
-
-            # Infos utiles pour le monitoring (optionnel)
             "battery": raw.get('battery')
         }
 
         # C. Envoi vers Kafka
         producer.send(KAFKA_TOPIC_OUT, processed_data)
 
-        # Log léger pour vérifier que ça tourne
-        print(f"[Filtre] {bin_id} -> US:{us_clean}cm | Poids:{weight_clean}kg -> Kafka sent")
+        # Log (optionnel : commenter si trop verbeux)
+        print(f"[Filtre] {bin_id} -> Traité et envoyé à Kafka")
 
     except Exception as e:
         print(f"[Filtre] Erreur processing: {e}")
 
+
+# --- 4. DÉMARRAGE MQTT (Avec Retry) ---
+if __name__ == '__main__':
+    print(f"[Filtre] Démarrage du service...")
+    print(f"[Filtre] Source MQTT: {MQTT_BROKER} ({MQTT_TOPIC_IN})")
+
+    # Initialisation du client (Version 1 pour éviter le warning Deprecated)
+    try:
+        # Tente d'utiliser la constante si la librairie est récente
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+    except AttributeError:
+        # Fallback pour les vieilles versions de paho-mqtt
+        client = mqtt.Client()
+
+    client.on_message = on_message
+
+    # Boucle de connexion robuste pour MQTT
+    mqtt_connected = False
+    while not mqtt_connected:
+        try:
+            client.connect(MQTT_BROKER, 1883, 60)
+            mqtt_connected = True
+            print("[Filtre] Connexion MQTT RÉUSSIE !")
+        except Exception as e:
+            print(f"[Filtre] Impossible de joindre Mosquitto ({e})... Nouvel essai dans 5s.")
+            time.sleep(5)
+
+    client.subscribe(MQTT_TOPIC_IN)
+    client.loop_forever()
+
+# old enlever
 # --- 2. GESTION MQTT (En arrière-plan) ---
 # def on_message(client, userdata, msg):
 #     try:
@@ -171,23 +205,23 @@ def on_message(client, userdata, msg):
 #     """Filtrer les poubelles par zone (ex: Quartier Nord)"""
 #     bins_in_zone = [b for b in DATA_STORE.values() if b['metadata']['zone'] == zone_name]
 #     return jsonify(bins_in_zone)
-
-
-# --- 4. DÉMARRAGE ---
-if __name__ == '__main__':
-    print(f"[Filtre] Démarrage du service...")
-    print(f"[Filtre] Source MQTT: {MQTT_BROKER} ({MQTT_TOPIC_IN})")
-    print(f"[Filtre] Cible Kafka: {KAFKA_BROKER} ({KAFKA_TOPIC_OUT})")
-
-    try:
-        client = mqtt.Client()
-        client.on_message = on_message
-        client.connect(MQTT_BROKER, 1883, 60)
-        client.subscribe(MQTT_TOPIC_IN)
-
-        client.loop_forever()
-
-    except KeyboardInterrupt:
-        print("\n[Filtre] Arrêt du service.")
-    except Exception as e:
-        print(f"[Filtre] Erreur critique MQTT: {e}")
+#
+#
+# # --- 4. DÉMARRAGE ---
+# if __name__ == '__main__':
+#     print(f"[Filtre] Démarrage du service...")
+#     print(f"[Filtre] Source MQTT: {MQTT_BROKER} ({MQTT_TOPIC_IN})")
+#     print(f"[Filtre] Cible Kafka: {KAFKA_BROKER} ({KAFKA_TOPIC_OUT})")
+#
+#     try:
+#         client = mqtt.Client()
+#         client.on_message = on_message
+#         client.connect(MQTT_BROKER, 1883, 60)
+#         client.subscribe(MQTT_TOPIC_IN)
+#
+#         client.loop_forever()
+#
+#     except KeyboardInterrupt:
+#         print("\n[Filtre] Arrêt du service.")
+#     except Exception as e:
+#         print(f"[Filtre] Erreur critique MQTT: {e}")

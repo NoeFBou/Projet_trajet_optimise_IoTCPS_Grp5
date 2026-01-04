@@ -76,6 +76,8 @@ services:
     build: ./simulator
     depends_on:
       - mosquitto
+    volumes:
+      - ./dataset:/dataset
     environment:
       - MQTT_BROKER=mosquitto
     networks:

@@ -3,7 +3,8 @@ import json
 import random
 import paho.mqtt.client as mqtt
 import os
-
+import os
+# Utilise os.path.join pour que ça marche partout
 # --- CONFIG MQTT ---
 MQTT_BROKER = "mosquitto"
 TOPIC_RAW = "bin/raw_signals"
@@ -16,24 +17,25 @@ DIMS_DEFINITIONS = {
 }
 
 TICKS_PER_DAY = 30 / 2  # Vitesse de simulation
+fichierconfig =  os.path.join("..", "dataset", "simulation_iot_poubelles_light.json")
 
 
 # --- FONCTIONS UTILITAIRES ---
 
-def load_config(filepath="..\dataset\simulation_iot_poubelles_light.json"):
+def load_config():
     """Charge la configuration depuis un fichier JSON"""
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(fichierconfig, 'r', encoding='utf-8') as f:
             config_data = json.load(f)
             # Si le JSON est un objet unique, on le met dans une liste
             if isinstance(config_data, dict):
                 config_data = [config_data]
             return config_data
     except FileNotFoundError:
-        print(f"ERREUR: Le fichier {filepath} est introuvable.")
+        print(f"ERREUR: Le fichier {fichierconfig} est introuvable.")
         exit()
     except json.JSONDecodeError:
-        print(f"ERREUR: Le fichier {filepath} n'est pas un JSON valide.")
+        print(f"ERREUR: Le fichier {fichierconfig} n'est pas un JSON valide.")
         exit()
 
 

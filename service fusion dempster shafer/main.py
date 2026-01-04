@@ -2,7 +2,8 @@ import json
 import time
 import os
 from kafka import KafkaConsumer, KafkaProducer
-
+from kafka.errors import NoBrokersAvailable
+import sys
 from level_calculator_with_dempster_shafer import WasteBinMonitor
 
 # --- CONFIGURATION KAFKA ---
@@ -13,33 +14,48 @@ OUTPUT_TOPIC = "bin-levels"
 # --- INITIALISATION ---
 monitor = WasteBinMonitor()
 
-print(f"[Fusion] Démarrage du service de fusion Dempster-Shafer...")
-print(f"[Fusion] Broker: {KAFKA_BROKER} | Listening: {INPUT_TOPIC} -> Publishing: {OUTPUT_TOPIC}")
+print(f"[Fusion] Connexion à Kafka ({KAFKA_BROKER})...")
+# --- CONNEXION KAFKA ---
+consumer = None
+producer = None
 
-consumer = KafkaConsumer(
-    INPUT_TOPIC,
-    bootstrap_servers=[KAFKA_BROKER],
-    auto_offset_reset='latest',
-    enable_auto_commit=True,
-    group_id='fusion-service-group',
-    value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-)
+while consumer is None:
+    try:
+        consumer = KafkaConsumer(
+            INPUT_TOPIC,
+            bootstrap_servers=KAFKA_BROKER,
+            auto_offset_reset='earliest',
+            group_id='fusion-service-group',
+            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+        )
+        print("[Fusion] Consumer connecté !", flush=True) # <--- flush=True force l'affichage
+    except NoBrokersAvailable:
+        print("[Fusion] Kafka pas prêt (Consumer)... on attend 5s.")
+        time.sleep(5)
+    except Exception as e:
+        print(f"[Fusion] Erreur Consumer: {e}")
+        time.sleep(5)
 
-producer = KafkaProducer(
-    bootstrap_servers=[KAFKA_BROKER],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+while producer is None:
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers=KAFKA_BROKER,
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+        print("[Fusion] Producer connecté !")
+    except NoBrokersAvailable:
+        print("[Fusion] Kafka pas prêt (Producer)... on attend 5s.")
+        time.sleep(5)
+    except Exception as e:
+        print(f"[Fusion] Erreur Producer: {e}")
+        time.sleep(5)
 
 # --- BOUCLE DE TRAITEMENT ---
 try:
+    print("[Fusion] En attente de messages...", flush=True)
     for message in consumer:
         try:
             data = message.value
-
-            # --- A. PRÉPARATION DES DONNÉES ---
-            # On adapte les données reçues du filtre pour le calculateur Dempster-Shafer
-            # Note : Le filtre envoie souvent une seule valeur US "propre",
-            # mais le calculateur en attend 2 (us1, us2). On duplique pour satisfaire la fonction.
 
             meas = data.get('measurements', {})
             alerts = meas.get('fill_alerts', {})
@@ -81,7 +97,7 @@ try:
             producer.send(OUTPUT_TOPIC, key=key_bytes, value=output_message)
 
             print(f"[Fusion] {output_message['bin_id']} -> État: {etat} (Poids: {monitor_inputs['weight']}kg)")
-
+            print(f"[Fusion] {output_message['bin_id']} -> État: {etat}", flush=True)
         except Exception as e:
             print(f"[Fusion] Erreur traitement message: {e}")
 

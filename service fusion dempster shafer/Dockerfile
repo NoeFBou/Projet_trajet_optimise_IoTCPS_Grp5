@@ -2,17 +2,14 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
+# On copie les requirements D'ABORD pour profiter du cache Docker
 COPY requirements.txt .
+
+# On installe les librairies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY pyds.py .
-COPY level_calculator_with_dempster_shafer.py .
-COPY main.py .
+# Ensuite on copie le reste du code
+COPY . .
 
-EXPOSE 8001
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+# Commande de lancement (adaptée à ce que je vois dans tes logs)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

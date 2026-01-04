@@ -5,6 +5,8 @@ import requests
 import schedule
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
+import pymongo
+import datetime
 
 # --- CONFIG ---
 KAFKA_BROKER = "kafka:9092"
@@ -13,6 +15,11 @@ VRP_SERVICE_URL = "http://vrp-service:8000/solve_vrp"
 TRUCK_SERVICE_URL = "http://truck-service:5001/api/trucks"  # Attention au port 5001 (exposé) ou 5000 (interne docker)
 # Si on est DANS le réseau docker, c'est truck-service:5000
 TRUCK_SERVICE_INTERNAL_URL = "http://truck-service:5000/api/trucks"
+MONGO_URI = "mongodb://mongodb:27017/"
+mongo_client = pymongo.MongoClient(MONGO_URI)
+db = mongo_client["waste_management"]
+routes_collection = db["routes_history"]
+
 
 # Dépôt central (coordonnées de Nice pour l'exemple)
 DEPOT_COORDS = [43.7102, 7.2620]
@@ -173,6 +180,15 @@ def trigger_optimization():
             # On affiche juste le résumé pour pas polluer les logs
             nb_routes = len(result.get('routes', []))
             print(f"[Aggregator] SUCCÈS VRP ! {nb_routes} tournées générées.", flush=True)
+            if nb_routes > 0:
+                save_data = {
+                    "timestamp": datetime.datetime.utcnow(),
+                    "total_fleet_time": result.get('total_fleet_time'),
+                    "routes": result.get('routes')
+                }
+                routes_collection.insert_one(save_data)
+                print("[Aggregator] Routes sauvegardées dans MongoDB.", flush=True)
+
             if nb_routes > 0:
                 print(f"[Aggregator] Exemple route 1: {result['routes'][0]['steps']} étapes", flush=True)
         else:

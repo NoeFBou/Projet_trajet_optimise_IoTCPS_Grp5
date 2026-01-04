@@ -60,9 +60,7 @@ services:
 
   osrm-backend:
     image: osrm/osrm-backend
-    # En prod, il faut monter un fichier .osrm pré-calculé (ex: ile-de-france)
-    # Pour le test, on utilise un mock ou il faut télécharger la map
-    command: "osrm-routed --algorithm mld /data/france-latest.osrm" 
+    command: "osrm-routed --algorithm mld /data/map.osrm"
     volumes:
       - ./osrm-data:/data
     ports:
@@ -136,6 +134,15 @@ services:
       - KAFKA_BROKER=kafka:9092
       - VRP_URL=http://vrp-service:8000
       - TRUCK_URL=http://truck-service:5000
+    networks:
+      - waste_net
+  dashboard-service:
+    build: ./service dashboard
+    ports:
+      - "8501:8501"
+    depends_on:
+      - mongodb
+      - osrm-backend
     networks:
       - waste_net
 

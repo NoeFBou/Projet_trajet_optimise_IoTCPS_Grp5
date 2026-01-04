@@ -15,7 +15,6 @@ try:
     # On charge la couche COMMUNE
     gdf_communes = gpd.read_file(FICHIER_BD_TOPO, layer="COMMUNE")
 
-    # CORRECTION ICI : On utilise "code_insee" en minuscule (vu dans votre test.py)
     if "code_insee" not in gdf_communes.columns:
         raise ValueError("La colonne 'code_insee' est introuvable dans la couche COMMUNE.")
 
@@ -121,6 +120,44 @@ cols_a_garder = [
 # Sécurité : on ne garde que les colonnes qui existent vraiment
 cols_finales = [c for c in cols_a_garder if c in gdf_nice.columns]
 
+# --- 5b. AJOUT DES QUARTIERS (VIA OSM) ---
+print("5b. Récupération des quartiers de Nice via OSM...")
+
+try:
+    # On télécharge les zones définies comme 'suburb' (quartier) ou 'neighbourhood'
+    tags_quartier = {"place": ["suburb", "quarter", "neighbourhood"]}
+    gdf_quartiers = ox.features_from_place("Nice, France", tags=tags_quartier)
+
+    # On ne garde que les polygones (zones) et on simplifie les colonnes
+    gdf_quartiers = gdf_quartiers[gdf_quartiers.geometry.type.isin(['Polygon', 'MultiPolygon'])]
+    gdf_quartiers = gdf_quartiers[["name", "geometry"]].to_crs(gdf_nice.crs)
+
+    # Renommer la colonne pour éviter les conflits
+    gdf_quartiers = gdf_quartiers.rename(columns={"name": "nom_quartier"})
+
+    print(f"   > {len(gdf_quartiers)} quartiers trouvés (ex: {gdf_quartiers['nom_quartier'].iloc[0]}).")
+    print("   > Attribution des quartiers aux bâtiments...")
+
+    # JOINTURE SPATIALE
+    # On regarde dans quel quartier tombe le CENTRE de chaque bâtiment
+    # Cela évite les bugs si un bâtiment est à cheval sur deux zones
+    gdf_nice_centroids = gdf_nice.copy()
+    gdf_nice_centroids.geometry = gdf_nice.geometry.centroid
+
+    # op="within" signifie : le point est DANS le polygone
+    joined = gpd.sjoin(gdf_nice_centroids, gdf_quartiers, how="left", predicate="within")
+
+    # On réinjecte le nom du quartier dans le DataFrame principal
+    gdf_nice["zone_id"] = joined["nom_quartier"]
+
+    # Remplir les vides (bâtiments hors zones définies) par "Centre_Ville" ou "Autre"
+    gdf_nice["zone_id"] = gdf_nice["zone_id"].fillna("Zone_Non_Definie")
+
+except Exception as e:
+    print(f"   ! Impossible de récupérer les quartiers ({e}). On mettra 'Zone_Defaut'.")
+    gdf_nice["zone_id"] = "Zone_Defaut"
+
+
 print("5. Sauvegarde des fichiers...")
 gdf_nice[cols_finales].to_file(output_geojson, driver="GeoJSON")
 
@@ -213,9 +250,12 @@ for idx, row in iterator:
         start_percentage = random.uniform(0.0, 0.75)
         current_level = int(capacite_bac * start_percentage)
 
+        quartier_actuel = row.get("zone_id", "Inconnu")
+
         capteur = {
             "id": f"PBL-{bat_id}-{type_dechet[:3].upper()}",
             "type": type_dechet,
+            "zone": quartier_actuel,
             "daily_growth": daily_growth,
             "current_level": current_level,
             "max_capacity": capacite_bac,

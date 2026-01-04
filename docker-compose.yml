@@ -1,24 +1,145 @@
+version: '3.8'
+
 services:
+  # --- INFRASTRUCTURE ---
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - waste_net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # Configuration pour permettre la compaction (garder le dernier état) faudra peut etre changer ca jsp
+      KAFKA_LOG_CLEANER_ENABLE: "true"
+    networks:
+      - waste_net
+
+  mosquitto:
+    image: eclipse-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+    networks:
+      - waste_net
+
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=password12345
+      - DOCKER_INFLUXDB_INIT_ORG=my-org
+      - DOCKER_INFLUXDB_INIT_BUCKET=waste_management
+    networks:
+      - waste_net
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - waste_net
+
   osrm-backend:
     image: osrm/osrm-backend
-    container_name: osrm-backend
-    restart: always
+    # En prod, il faut monter un fichier .osrm pré-calculé (ex: ile-de-france)
+    # Pour le test, on utilise un mock ou il faut télécharger la map
+    command: "osrm-routed --algorithm mld /data/france-latest.osrm" 
+    volumes:
+      - ./osrm-data:/data
     ports:
       - "5000:5000"
-    volumes:
-      - ./service_vrp/data:/data
-    command: "osrm-routed --algorithm mld /data/data.osrm"
+    networks:
+      - waste_net
 
-  vrp-api:
-    image: my-vrp-service:latest
-    build:
-      context: ./service_vrp
-      dockerfile: Dockerfile
-    container_name: vrp-api
-    restart: always
+  # --- SERVICES APPLICATIFS ---
+
+  simulator:
+    build: ./simulator
+    depends_on:
+      - mosquitto
+    environment:
+      - MQTT_BROKER=mosquitto
+    networks:
+      - waste_net
+
+  filter-service:
+    build: ./service filter
+    depends_on:
+      - mosquitto
+      - kafka
+    environment:
+      - MQTT_BROKER=mosquitto
+      - KAFKA_BROKER=kafka:9092
+    networks:
+      - waste_net
+
+  fusion-service:
+    build: ./service fusion dempster shafer
+    depends_on:
+      - kafka
+      - influxdb
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=password12345
+    networks:
+      - waste_net
+
+  truck-service:
+    build: ./TruckAPI
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
     ports:
-      - "8000:8000"
+      - "5001:5000" # Exposé sur 5001 sur l'hôte
+    networks:
+      - waste_net
+
+  vrp-service:
+    build: ./service vrp
     depends_on:
       - osrm-backend
     environment:
       - OSRM_URL=http://osrm-backend:5000
+    networks:
+      - waste_net
+
+  aggregator-service:
+    build: ./service aggregator
+    depends_on:
+      - kafka
+      - vrp-service
+      - truck-service
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - VRP_URL=http://vrp-service:8000
+      - TRUCK_URL=http://truck-service:5000
+    networks:
+      - waste_net
+
+networks:
+  waste_net:
+    driver: bridge
+
+volumes:
+  mongodb_data:

@@ -10,30 +10,27 @@ import datetime
 
 # --- CONFIG ---
 KAFKA_BROKER = "kafka:9092"
-KAFKA_TOPIC_IN = "bin-levels"  # Topic contenant les niveaux calculés (fusion)
+KAFKA_TOPIC_IN = "bin-levels"
 VRP_SERVICE_URL = "http://vrp-service:8000/solve_vrp"
-TRUCK_SERVICE_URL = "http://truck-service:5001/api/trucks"  # Attention au port 5001 (exposé) ou 5000 (interne docker)
-# Si on est DANS le réseau docker, c'est truck-service:5000
+TRUCK_SERVICE_URL = "http://truck-service:5001/api/trucks"
 TRUCK_SERVICE_INTERNAL_URL = "http://truck-service:5000/api/trucks"
 MONGO_URI = "mongodb://mongodb:27017/"
 mongo_client = pymongo.MongoClient(MONGO_URI)
 db = mongo_client["waste_management"]
 routes_collection = db["routes_history"]
+SIMULATOR_URL = "http://simulator:5000/empty"
 
-
-# Dépôt central (coordonnées de Nice pour l'exemple)
+# Dépôt central
 DEPOT_COORDS = [43.7102, 7.2620]
 
 # --- ÉTAT EN MÉMOIRE ---
-# On utilise UN SEUL dictionnaire partagé
 BIN_STATE_DB = {}
 DB_LOCK = threading.Lock()
 
 
 def start_kafka_consumer():
     """Écoute Kafka dans un thread séparé et met à jour l'état des poubelles"""
-    # Pas besoin de global ici car BIN_STATE_DB est un objet mutable (dict)
-    # mais pour être propre on peut le déclarer si on le réassignait
+
 
     print("[Aggregator] Tentative de connexion au Consumer Kafka...", flush=True)
 
@@ -105,21 +102,15 @@ def get_available_trucks():
 
 
 def trigger_optimization():
-    """Logique principale : Sélection des poubelles -> Appel VRP"""
     print("\n--- [Aggregator] Lancement cycle optimisation ---", flush=True)
 
     bins_to_collect = []
-    total_waste_weight = 0
 
-    # Lecture sécurisée de la base mémoire
     with DB_LOCK:
-        # On copie les items pour ne pas bloquer la DB trop longtemps
         items = list(BIN_STATE_DB.items())
 
     for b_id, info in items:
-        # Critère de ramassage : E4 ou E5
         if info['level_code'] in ['E4', 'E5']:
-            # Vérification simple des coordonnées (éviter les bugs à 0.0)
             if info['lat'] != 0.0 and info['lon'] != 0.0:
                 bins_to_collect.append({
                     "id": b_id,
@@ -127,49 +118,24 @@ def trigger_optimization():
                     "lon": info['lon'],
                     "weight": info['weight']
                 })
-                total_waste_weight += info['weight']
 
     if not bins_to_collect:
-        print(f"[Aggregator] Rien à ramasser (Sur {len(items)} poubelles connues). On attend.", flush=True)
+        print(f"[Aggregator] Rien à ramasser (Sur {len(items)} poubelles).", flush=True)
         return
 
-    print(f"[Aggregator] {len(bins_to_collect)} poubelles critiques (Poids: {total_waste_weight:.2f}kg)", flush=True)
+    print(f"[Aggregator] {len(bins_to_collect)} poubelles critiques.", flush=True)
 
-    # 2. Récupérer les camions
     trucks = get_available_trucks()
-
-    # --- MOCK CAMION SI API VIDE (POUR TESTER) ---
     if not trucks:
-        print("[Aggregator] Pas de camions API -> Utilisation camion de secours fictif.", flush=True)
-        trucks = [{"truck_id": "TEST-TRUCK-01", "capacity": 20.0}]  # Capacité en tonnes ?
-    # ---------------------------------------------
+        trucks = [{"truck_id": "TEST-TRUCK-01", "capacity": 20.0}]
 
-    # Formatter les camions pour le VRP
     vrp_trucks = []
-    total_truck_capacity = 0
-
     for t in trucks:
-        # On gère si l'ID est '_id' (Mongo) ou 'truck_id'
         tid = t.get('truck_id') or str(t.get('_id'))
-        cap = t.get('capacity', 10)
+        cap_kg = t.get('capacity', 10) * 1000
+        vrp_trucks.append({"id": tid, "capacity": cap_kg})
 
-        # Conversion Tonnes -> Kg (Hypothèse)
-        cap_kg = cap * 1000
-
-        vrp_trucks.append({
-            "id": tid,
-            "capacity": cap_kg
-        })
-        total_truck_capacity += cap_kg
-
-    print(f"[Aggregator] Flotte: {len(vrp_trucks)} camions (Capacité: {total_truck_capacity}kg)", flush=True)
-
-    # 3. Appel VRP
-    payload = {
-        "bins": bins_to_collect,
-        "trucks": vrp_trucks,
-        "depot": DEPOT_COORDS
-    }
+    payload = {"bins": bins_to_collect, "trucks": vrp_trucks, "depot": DEPOT_COORDS}
 
     try:
         print("[Aggregator] Envoi demande au VRP...", flush=True)
@@ -177,9 +143,9 @@ def trigger_optimization():
 
         if resp.status_code == 200:
             result = resp.json()
-            # On affiche juste le résumé pour pas polluer les logs
             nb_routes = len(result.get('routes', []))
-            print(f"[Aggregator] SUCCÈS VRP ! {nb_routes} tournées générées.", flush=True)
+            print(f"[Aggregator] SUCCÈS VRP ! {nb_routes} tournées.", flush=True)
+
             if nb_routes > 0:
                 save_data = {
                     "timestamp": datetime.datetime.utcnow(),
@@ -187,28 +153,36 @@ def trigger_optimization():
                     "routes": result.get('routes')
                 }
                 routes_collection.insert_one(save_data)
-                print("[Aggregator] Routes sauvegardées dans MongoDB.", flush=True)
 
-            if nb_routes > 0:
-                print(f"[Aggregator] Exemple route 1: {result['routes'][0]['steps']} étapes", flush=True)
+                collected_ids = []
+                for route in result['routes']:
+                    for stop in route['stops']:
+                        if "DEPOT" not in stop['point_id']:
+                            collected_ids.append(stop['point_id'])
+
+                if collected_ids:
+                    print(f"[Aggregator] Envoi ordre de vidage pour {len(collected_ids)} poubelles...", flush=True)
+                    try:
+                        # Appel HTTP vers le simulateur
+                        requests.post(SIMULATOR_URL, json={"bin_ids": collected_ids}, timeout=2)
+                    except Exception as e:
+                        print(f"[Aggregator] Erreur contact simulateur: {e}", flush=True)
+
         else:
-            print(f"[Aggregator] Échec VRP: {resp.status_code} - {resp.text}", flush=True)
+            print(f"[Aggregator] Échec VRP: {resp.status_code}", flush=True)
 
     except Exception as e:
-        print(f"[Aggregator] Erreur appel VRP: {e}", flush=True)
+        print(f"[Aggregator] Erreur générale: {e}", flush=True)
 
 
-# --- BOUCLE PRINCIPALE ---
 if __name__ == "__main__":
-    # 1. Thread Kafka
     t = threading.Thread(target=start_kafka_consumer)
     t.daemon = True
     t.start()
 
-    print("[Aggregator] Service démarré. En attente de données...", flush=True)
+    print("[Aggregator] Service démarré.", flush=True)
     time.sleep(5)
 
     while True:
         trigger_optimization()
-        # On réduit le temps d'attente à 10s pour voir le résultat plus vite
-        time.sleep(10)
+        time.sleep(20)

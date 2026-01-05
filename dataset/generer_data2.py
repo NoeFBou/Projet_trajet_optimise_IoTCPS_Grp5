@@ -174,7 +174,7 @@ TAILLE_BAC_INDIVIDUEL = 240  # 240L (standard maison)
 TAILLE_BAC_COMMERCE = 660  # 660L (gros bac 4 roues pour restos/gros immeubles)
 
 # Pourcentage de bâtiments qu'on GARDE (0.4 = on garde 40%, on jette 60%)
-PROBABILITE_CONSERVATION = 0.1
+PROBABILITE_CONSERVATION = 0.00001
 
 PROPS_DECHETS = {
     "Verre": {"density": 0.35, "part_volume": 0.15},

@@ -154,6 +154,7 @@ def get_snapped_coordinate(lat, lon):
 TAILLE_BAC_INDIVIDUEL = 240
 TAILLE_BAC_COMMERCE = 660
 
+#pourcentage de batiment qu on garde 0.4 = 40%
 PROBABILITE_CONSERVATION = 0.01
 
 PROPS_DECHETS = {

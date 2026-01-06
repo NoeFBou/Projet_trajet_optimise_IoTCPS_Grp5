@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+influxdb-client
+numpy
+scipy
+pydantic
+python-multipart
+kafka-python

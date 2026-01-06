@@ -23,7 +23,8 @@ def seed_data():
             "waste_type": "household",
             "address": "12 Rue des Forges, 75010 Paris",
             "sector": "North",
-            "capacity": 18,
+            "capacity": 18, # In kilograms
+            "volume": 30, # In cubic meters
             "status": "active",
             "schedule": [
                 {"date": "2025-11-20", "start_time": "08:00", "end_time": "12:00"},
@@ -35,7 +36,8 @@ def seed_data():
             "waste_type": "recyclables",
             "address": "45 Avenue du Sud, 34000 Montpellier",
             "sector": "South",
-            "capacity": 25,
+            "capacity": 25, # In kilograms
+            "volume": 30, # In cubic meters
             "status": "maintenance",
             "schedule": [
                 {"date": "2025-11-22", "start_time": "09:00", "end_time": "14:00"}

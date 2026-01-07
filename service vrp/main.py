@@ -34,10 +34,7 @@ OSRM_URL = os.getenv("OSRM_URL", "http://osrm-backend:5000")
 
 
 # --- OUTILS MATHÉMATIQUES (FALLBACK) ---
-# ... (imports et config restent pareils)
-
 def haversine_duration(lat1, lon1, lat2, lon2, speed_kmh=30.0):
-    """Fallback mathématique : distance vol d'oiseau"""
     R = 6371000
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     dphi = math.radians(lat2 - lat1)
@@ -61,8 +58,7 @@ def get_time_matrix(locations: List[Tuple[float, float]], chunk_size: int = 50) 
             src_batch = locations[i: i + chunk_size]
             dst_batch = locations[j: j + chunk_size]
 
-            # 1. ARRONDI DES COORDONNÉES (Pour éviter URL trop longue/malformed)
-            # On arrondit à 6 décimales (~10cm de précision), suffisant et bien plus court
+            # 1. ARRONDI DES COORDONNÉES
             src_coords_str = [f"{round(lon, 6)},{round(lat, 6)}" for lon, lat in src_batch]
             dst_coords_str = [f"{round(lon, 6)},{round(lat, 6)}" for lon, lat in dst_batch]
 
@@ -80,8 +76,7 @@ def get_time_matrix(locations: List[Tuple[float, float]], chunk_size: int = 50) 
             src_url_part = ";".join(map(str, src_idx))
             dst_url_part = ";".join(map(str, dst_idx))
 
-            # 2. PARAMÈTRE RADIUSES (La solution magique)
-            # On génère une liste "1000;1000;1000..." pour dire "cherche à 1km à la ronde pour chaque point"
+            # 2. PARAMÈTRE RADIUSES
             radiuses_param = ";".join(["1000"] * len(all_coords))
 
             full_url = (f"{OSRM_URL}/table/v1/driving/{coords_url_part}"
@@ -89,21 +84,17 @@ def get_time_matrix(locations: List[Tuple[float, float]], chunk_size: int = 50) 
                         f"&annotations=duration&radiuses={radiuses_param}")
 
             try:
-                # Timeout court : si OSRM galère plus de 2s, on passe en mathématique
                 response = requests.get(full_url, timeout=2.0)
 
                 if response.status_code == 200:
                     data = response.json()
-                    # Vérification code OSRM
                     if data.get("code") != "Ok":
-                        # Si OSRM dit "NoSegment" malgré le rayon de 1000m, on force le fallback
                         raise Exception(f"OSRM Logic Error: {data.get('code')}")
 
                     durations = data.get("durations", [])
                     for r, row in enumerate(durations):
                         for c, val in enumerate(row):
                             if val is None:
-                                # Même avec le rayon, pas de route trouvée -> Math
                                 s_lat, s_lon = src_batch[r][1], src_batch[r][0]
                                 d_lat, d_lon = dst_batch[c][1], dst_batch[c][0]
                                 matrix[i + r][j + c] = haversine_duration(s_lat, s_lon, d_lat, d_lon)
@@ -113,15 +104,11 @@ def get_time_matrix(locations: List[Tuple[float, float]], chunk_size: int = 50) 
                     raise Exception(f"HTTP {response.status_code}")
 
             except Exception as e:
-                # 3. FALLBACK MATHÉMATIQUE (Si tout échoue)
-                # On ne log que les erreurs critiques pour ne pas spammer
-                # print(f"[VRP] Fallback Math sur chunk {i}-{j} ({e})")
                 for r_idx, (src_lon, src_lat) in enumerate(src_batch):
                     for c_idx, (dst_lon, dst_lat) in enumerate(dst_batch):
                         matrix[i + r_idx][j + c_idx] = haversine_duration(src_lat, src_lon, dst_lat, dst_lon)
 
     return matrix
-
 
 
 # --- ENDPOINT ---
@@ -135,7 +122,7 @@ def solve_vrp(request: VRPRequest):
     for b in request.bins:
         all_coordinates.append((b.lon, b.lat))
 
-    # Calcul Matrice (Indestructible maintenant)
+    # Calcul Matrice
     time_matrix = get_time_matrix(all_coordinates)
 
     # Configuration OR-Tools
@@ -155,7 +142,7 @@ def solve_vrp(request: VRPRequest):
     transit_callback_index = routing.RegisterTransitCallback(time_callback)
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
-    # Contrainte Temps (24h max)
+    # --- 1. CRÉATION DE LA DIMENSION TEMPS ---
     routing.AddDimension(
         transit_callback_index,
         3600,  # Slack (attente autorisée)
@@ -163,6 +150,10 @@ def solve_vrp(request: VRPRequest):
         True,  # Start at zero
         "Time"
     )
+
+    # --- 2. CONFIGURATION DU SPAN (Une fois la dimension créée) ---
+    time_dimension = routing.GetDimensionOrDie("Time")
+    time_dimension.SetGlobalSpanCostCoefficient(100)
 
     # Contrainte Capacité
     def demand_callback(from_index):
@@ -193,7 +184,6 @@ def solve_vrp(request: VRPRequest):
     search_parameters.local_search_metaheuristic = (
         routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
     search_parameters.time_limit.seconds = 30
-    # search_parameters.log_search = True # Décommenter pour debug intense
 
     solution = routing.SolveWithParameters(search_parameters)
 

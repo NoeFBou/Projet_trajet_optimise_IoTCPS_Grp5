@@ -17,9 +17,33 @@ trucks_collection = db["trucks"]
 # Seed database with initial data
 def seed_data():
     
-    sample_trucks = [
+    sample_trucks = db.trucks.insertMany([
         {
             "truck_id": "T001",
+            "waste_type": "household",
+            "address": "12 Rue des Forges, 75010 Paris",
+            "sector": "North",
+            "capacity": 18,
+            "status": "active",
+            "schedule": [
+                {"date": "2025-11-20", "start_time": "08:00", "end_time": "12:00"},
+                {"date": "2025-11-21", "start_time": "13:00", "end_time": "18:00"}
+            ]
+        },
+        {
+            "truck_id": "T009",
+            "waste_type": "household",
+            "address": "12 Rue des Forges, 75010 Paris",
+            "sector": "North",
+            "capacity": 18,
+            "status": "active",
+            "schedule": [
+                {"date": "2025-11-20", "start_time": "08:00", "end_time": "12:00"},
+                {"date": "2025-11-21", "start_time": "13:00", "end_time": "18:00"}
+            ]
+        },
+        {
+            "truck_id": "T007",
             "waste_type": "household",
             "address": "12 Rue des Forges, 75010 Paris",
             "sector": "North",
@@ -52,13 +76,13 @@ def seed_data():
                 {"date": "2025-11-23", "start_time": "07:00", "end_time": "11:00"}
             ]
         }
-    ]
+    ])
 
     trucks_collection.insert_many(sample_trucks)
     print("Database initialized with truck data.")
 
 
-seed_data()
+#seed_data()
 
 
 

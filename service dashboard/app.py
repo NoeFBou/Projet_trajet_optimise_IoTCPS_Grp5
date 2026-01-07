@@ -3,7 +3,7 @@ import pymongo
 import folium
 from streamlit_folium import st_folium
 import requests
-import random
+import time
 from datetime import datetime
 
 # Configuration
@@ -55,6 +55,25 @@ def get_route_geometry(waypoints):
     return None
 
 
+def get_bin_info_from_id(point_id):
+    """Décode l'ID (ex: PBL-0123-VER) pour avoir des infos lisibles"""
+    if "DEPOT" in point_id:
+        return "Dépôt", "Centre logistique"
+
+    parts = point_id.split('-')
+    # On suppose le format PBL-{ID}-{TYPE}
+    if len(parts) >= 3:
+        code = parts[-1]
+        mapping = {
+            "VER": "Verre 🟢",
+            "REC": "Recyclable 🟡",
+            "ORG": "Organique 🟤",
+            "TOU": "Tout-Venant ⚫"
+        }
+        return mapping.get(code, code), parts[1]
+    return "Inconnu", "N/A"
+
+
 # --- UI PRINCIPALE ---
 
 st.title("🚛 Suivi des Tournées de Collecte (Nice)")
@@ -71,110 +90,130 @@ if db is not None:
     if not history_list:
         st.warning("⚠️ Aucune donnée de route trouvée en base. Attendez que l'Aggregator lance une optimisation.")
     else:
-        # --- BARRE LATÉRALE : SÉLECTION SIMULATION ---
-        st.sidebar.header("📅 Historique")
+        # --- BARRE LATÉRALE ---
 
+        # 1. Bouton Action
+        st.sidebar.title("🎮 Contrôle")
+        if st.sidebar.button("🚀 GÉNÉRER TOURNEES", type="primary"):
+            with st.spinner("Calcul des itinéraires en cours (VRP)..."):
+                try:
+                    response = requests.post("http://aggregator-service:5000/run-optimization", timeout=70)
+                    if response.status_code == 200:
+                        res_json = response.json()
+                        if res_json['status'] == 'success':
+                            st.sidebar.success(f"Succès ! {res_json['routes_count']} tournées.")
+                            time.sleep(1)
+                            st.rerun()
+                        elif res_json['status'] == 'no_action':
+                            st.sidebar.info("Rien à faire.")
+                        else:
+                            st.sidebar.error(f"Échec : {res_json.get('message')}")
+                    else:
+                        st.sidebar.error(f"Erreur HTTP : {response.status_code}")
+                except Exception as e:
+                    st.sidebar.error(f"Impossible de joindre l'Aggregator : {e}")
+
+        st.sidebar.markdown("---")
+
+        # 2. Historique
+        st.sidebar.header("📅 Historique")
         options_map = {
             doc["timestamp"].strftime("%d/%m/%Y à %H:%M:%S"): doc["_id"]
             for doc in history_list
         }
 
-        selected_label = st.sidebar.selectbox(
-            "Choisir une optimisation :",
-            options=list(options_map.keys()),
-            index=0
-        )
-
+        selected_label = st.sidebar.selectbox("Choisir une optimisation :", options=list(options_map.keys()), index=0)
         selected_id = options_map[selected_label]
         simulation_data = col.find_one({"_id": selected_id})
 
-        # --- BARRE LATÉRALE : CASES À COCHER CAMIONS ---
+        # 3. Liste des trajets
         st.sidebar.markdown("---")
-        st.sidebar.header("🚚 Flotte de camions")
+        st.sidebar.header("📍 Détail des tournées")
 
         routes = simulation_data.get("routes", [])
 
-        # --- CORRECTION ICI : DÉDOUBLONNAGE DES IDS ---
-        # On récupère tous les IDs bruts
-        raw_truck_ids = [r.get("truck_id", f"Truck-{i}") for i, r in enumerate(routes)]
-        # On crée une liste unique et triée pour la sidebar
-        unique_truck_ids = sorted(list(set(raw_truck_ids)))
-        # ----------------------------------------------
-
-        # -- Gestion Sélection / Désélection massive --
         col_btn1, col_btn2 = st.sidebar.columns(2)
         if col_btn1.button("Tout cocher"):
-            for tid in unique_truck_ids:
-                st.session_state[f"chk_{tid}"] = True
-
+            for i in range(len(routes)): st.session_state[f"chk_route_{i}"] = True
         if col_btn2.button("Tout décocher"):
-            for tid in unique_truck_ids:
-                st.session_state[f"chk_{tid}"] = False
+            for i in range(len(routes)): st.session_state[f"chk_route_{i}"] = False
 
-        st.sidebar.write(f"*{len(unique_truck_ids)} camions déployés*")
+        unique_trucks = len(set(r['truck_id'] for r in routes))
+        st.sidebar.write(f"*{len(routes)} tournées pour {unique_trucks} camions*")
 
-        selected_trucks = []
-
-        # -- Boucle de création des Checkbox (Sur la liste UNIQUE) --
+        selected_indices = []
         container = st.sidebar.container()
-
         with container:
-            for truck_id in unique_truck_ids:
-                # On initialise la clé dans session_state si elle n'existe pas
-                if f"chk_{truck_id}" not in st.session_state:
-                    st.session_state[f"chk_{truck_id}"] = True
+            for i, route in enumerate(routes):
+                tid = route.get("truck_id", "Inconnu")
+                nb_stops = len(route.get("stops", [])) - 2
+                load = route.get("total_load", 0)
 
-                # Création de la checkbox
-                # La clé est unique car truck_id vient de unique_truck_ids
-                is_checked = st.checkbox(
-                    f"Camion {truck_id}",
-                    key=f"chk_{truck_id}"
-                )
+                key = f"chk_route_{i}"
+                if key not in st.session_state: st.session_state[key] = True
 
-                if is_checked:
-                    selected_trucks.append(truck_id)
+                label = f"#{i + 1} : {tid} ({nb_stops} arrêts - {int(load)}kg)"
+                if st.checkbox(label, key=key):
+                    selected_indices.append(i)
 
         # --- AFFICHAGE PRINCIPAL ---
 
-        # On filtre les routes si leur ID est dans la liste sélectionnée
-        routes_to_display = [r for r in routes if r.get("truck_id") in selected_trucks]
+        routes_to_display = [routes[i] for i in selected_indices]
 
         if not routes_to_display:
-            st.info("Aucun camion sélectionné. Cochez des cases dans la barre latérale.")
+            st.info("Aucune tournée sélectionnée.")
         else:
-            # Map centrée sur Nice
             m = folium.Map(location=[43.7102, 7.2620], zoom_start=13)
-
             colors_palette = ["red", "blue", "green", "purple", "orange", "darkred", "cadetblue", "darkgreen",
                               "darkblue", "black"]
-            total_time_filtered = 0
+
+            # --- MODIFICATION: CALCUL DU TEMPS MAX ---
+            max_time_filtered = 0  # On cherche le trajet le plus long (Makespan)
 
             progress_bar = st.progress(0)
 
-            for i, truck_route in enumerate(routes_to_display):
+            for idx_loop, truck_route in enumerate(routes_to_display):
                 truck_id = truck_route.get("truck_id", "Unknown")
                 stops = truck_route.get("stops", [])
-                total_time_filtered += truck_route.get("total_time_seconds", 0)
 
-                # Couleur constante basée sur le nom
-                color_idx = abs(hash(truck_id)) % len(colors_palette)
-                color = colors_palette[color_idx]
+                # Récupération du temps de ce trajet spécifique
+                route_duration = truck_route.get("total_time_seconds", 0)
+                if route_duration > max_time_filtered:
+                    max_time_filtered = route_duration
+
+                color = colors_palette[abs(hash(truck_id)) % len(colors_palette)]
 
                 waypoints = []
                 for stop in stops:
                     waypoints.append(f"{stop['lon']},{stop['lat']}")
-
                     is_depot = "DEPOT" in stop['point_id']
+
                     icon_color = "black" if is_depot else color
                     icon_icon = "home" if is_depot else "trash"
 
-                    # Popup un peu plus riche
-                    charge = stop.get('load_after_visit', 0)
-                    popup_html = f"<b>{stop['point_id']}</b><br>Camion: {truck_id}<br>Charge: {charge:.1f}kg"
+                    # --- MODIFICATION: POPUP HTML ENRICHIE ---
+                    bin_type, bin_num = get_bin_info_from_id(stop['point_id'])
+                    collected_weight = stop.get('load_after_visit', 0)
+
+                    if is_depot:
+                        popup_html = f"<b>🏢 DÉPÔT CENTRAL</b><br>Camion: {truck_id}"
+                    else:
+                        # On récupère le poids collecté à cet arrêt précis si possible
+                        # Note: load_after_visit est cumulatif.
+                        # Pour simplifier l'affichage ici on montre le cumul ou juste l'ID.
+                        popup_html = f"""
+                        <div style="font-family: sans-serif; min-width: 150px;">
+                            <h5 style="margin:0;">🗑️ {bin_type}</h5>
+                            <hr style="margin: 5px 0;">
+                            <b>ID:</b> {stop['point_id']}<br>
+                            <b>Camion:</b> {truck_id}<br>
+                            <b>Poids cumulé:</b> {collected_weight:.1f} kg
+                        </div>
+                        """
 
                     folium.Marker(
                         location=[stop['lat'], stop['lon']],
-                        popup=folium.Popup(popup_html, max_width=200),
+                        popup=folium.Popup(popup_html, max_width=300),
                         icon=folium.Icon(color=icon_color, icon=icon_icon, prefix='fa')
                     ).add_to(m)
 
@@ -184,21 +223,24 @@ if db is not None:
                         geo_data,
                         name=f"Trajet {truck_id}",
                         style_function=lambda x, col=color: {'color': col, 'weight': 4, 'opacity': 0.8},
-                        tooltip=f"Trajet {truck_id}"
+                        tooltip=f"Trajet {truck_id} ({int(route_duration / 60)} min)"
                     ).add_to(m)
 
-                progress_bar.progress((i + 1) / len(routes_to_display))
+                progress_bar.progress((idx_loop + 1) / len(routes_to_display))
 
             progress_bar.empty()
 
             # Stats
-            st.markdown("### 📊 Statistiques")
+            st.markdown("### 📊 Statistiques de la sélection")
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("Simulation", selected_label)
             with col2:
-                st.metric("Trajets affichés", f"{len(routes_to_display)}")
-            with col3:
-                st.metric("Temps cumulé", f"{int(total_time_filtered / 60)} min")
+                st.metric("Tournées affichées", f"{len(routes_to_display)}")
+
+            # --- AFFICHAGE DU TEMPS MAX ---
+            hours = int(max_time_filtered // 3600)
+            minutes = int((max_time_filtered % 3600) // 60)
+            st.metric("Durée Opération (Fin au plus tard)", f"{hours}h {minutes}min")
 
             st_folium(m, width=1400, height=700)

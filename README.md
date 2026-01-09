@@ -16,7 +16,7 @@ Ce développement est mock d'un projet conceptualisé pendant les cours de _Fond
 
 ## Architecture
 
-Une solution complète basée sur une architecture Microservices pour optimiser la collecte des déchets urbains. Ce projet intègre la fusion de données capteurs (Dempster-Shafer), la gestion de flotte en temps réel et le calcul d'itinéraires optimisés (VRP).
+Une solution complète basée sur une architecture services pour optimiser la collecte des déchets urbains. Ce projet intègre la fusion de données capteurs (Dempster-Shafer), la gestion de flotte en temps réel et le calcul d'itinéraires optimisés (VRP).
 Le système repose sur une communication asynchrone via Kafka/mqtt/http et une orchestration conteneurisée avec Docker.
 
 schéma :
@@ -137,7 +137,7 @@ Le problème est modélisé comme un CVRP (Capacitated VRP).
 
 ---
 
-## 📄 Licence
+## Licence
 
 Ce projet est sous licence MIT - voir le fichier [LICENSE](https://www.google.com/search?q=LICENSE) pour plus de détails.
 

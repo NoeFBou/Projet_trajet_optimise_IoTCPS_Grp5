@@ -6,16 +6,22 @@
 
 ## Contexte
 
+Projet réalisé dans le cadre du cours de systèmes intelligents autonomes (2025 - 2026) 
 
-Une solution complète basée sur une architecture **Microservices** pour optimiser la collecte des déchets urbains. Ce projet intègre la fusion de données capteurs (Dempster-Shafer), la gestion de flotte en temps réel et le calcul d'itinéraires optimisés (VRP).
+Ce développement est mock d'un projet conceptualisé pendant les cours de _Fondements et défis des systèmes Cyber-Physiques_ et de _L'iot aux systèmes Cyber-Physiques_.
+
+
 
 ---
 
 ## Architecture
 
-Le système repose sur une communication asynchrone via **Kafka** et une orchestration conteneurisée avec **Docker**.
+Une solution complète basée sur une architecture Microservices pour optimiser la collecte des déchets urbains. Ce projet intègre la fusion de données capteurs (Dempster-Shafer), la gestion de flotte en temps réel et le calcul d'itinéraires optimisés (VRP).
+Le système repose sur une communication asynchrone via Kafka/mqtt/http et une orchestration conteneurisée avec Docker.
 
-*(Remplacer ce lien par votre schéma d'architecture : `images/architecture_diagram.png`)*
+schéma :
+je le met ici quand tout sera fini 
+
 
 ### Flux de données simplifié :
 
@@ -136,6 +142,3 @@ Le problème est modélisé comme un CVRP (Capacitated VRP).
 Ce projet est sous licence MIT - voir le fichier [LICENSE](https://www.google.com/search?q=LICENSE) pour plus de détails.
 
 ---
-
-* Projet réalisé dans le cadre du cours de systèmes intelligents autonomes (2025 - 2026) 
-* Ce développement est mock d'un projet qui fait suite à la conception de ce dernier pendant les cours de Fondements et défis des systèmes Cyber-Physiques et de l'iot aux systemes Cyber-Physiques.

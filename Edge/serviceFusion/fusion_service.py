@@ -62,6 +62,8 @@ def process_fusion(data):
         # Include anomaly info received from the previous step
         "anomaly_detected": data.get('is_anomaly', False),
         "anomaly_reason": data.get('anomaly_reason', "None"),
+        "volume_cm3": data.get('volume_cm3', 0.0),
+        "max_volume_cm3": data.get('max_volume_cm3', 0.0),
         
     }
     # PUBLISH TO MQTT

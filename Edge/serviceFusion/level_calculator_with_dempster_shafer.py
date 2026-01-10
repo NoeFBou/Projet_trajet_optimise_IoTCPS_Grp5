@@ -161,30 +161,3 @@ class WasteBinMonitor:
         return best_state_name, m_final
 
 
-
-monitor = WasteBinMonitor()
-
-inputs_test = {
-    'ir25': 1, 'ir50': 1, 'ir75': 1,
-    'us1': 5, 'us2': 8,
-    'weight': 2.5,
-    'type': 'plastique'
-}
-
-try:
-    etat, masse_finale = monitor.compute_level(inputs_test)
-
-    traduction = {
-        'E1': 'Vide (0-30%)',
-        'E2': 'Moyen (30-60%)',
-        'E3': 'Rempli (60-80%)',
-        'E4': 'Presque plein (80-90%)',
-        'E5': 'Plein (90-100%)'
-    }
-
-    print(f"Résultat final : La poubelle est {traduction.get(etat, 'Inconnu')}")
-
-except Exception as e:
-    print(f"Erreur lors de l'exécution : {e}")
-
-

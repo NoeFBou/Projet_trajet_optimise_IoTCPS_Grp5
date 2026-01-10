@@ -6,3 +6,7 @@ scipy
 pydantic
 python-multipart
 kafka-python
+requests
+numpy
+paho-mqtt
+Flask

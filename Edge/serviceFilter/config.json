@@ -1,0 +1,226 @@
+[
+    {
+        "id": "PBL-851546-VER",
+        "type": "Verre",
+        "current_level": 174,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295794.26056,
+            "lon": 1040994.57466
+        }
+    },
+    {
+        "id": "PBL-851546-REC",
+        "type": "Recyclable",
+        "current_level": 274,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295794.26056,
+            "lon": 1040994.57466
+        }
+    },
+    {
+        "id": "PBL-851546-ORG",
+        "type": "Organique",
+        "current_level": 169,
+        "max_capacity": 660,
+        "density": 0.5,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295794.26056,
+            "lon": 1040994.57466
+        }
+    },
+    {
+        "id": "PBL-898862-VER",
+        "type": "Verre",
+        "current_level": 539,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.00568,
+            "lon": 1040953.89101
+        }
+    },
+    {
+        "id": "PBL-898862-REC",
+        "type": "Recyclable",
+        "current_level": 489,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.00568,
+            "lon": 1040953.89101
+        }
+    },
+    {
+        "id": "PBL-898862-ORG",
+        "type": "Organique",
+        "current_level": 227,
+        "max_capacity": 660,
+        "density": 0.5,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.00568,
+            "lon": 1040953.89101
+        }
+    },
+    {
+        "id": "PBL-851547-VER",
+        "type": "Verre",
+        "current_level": 455,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.70409,
+            "lon": 1041002.39996
+        }
+    },
+    {
+        "id": "PBL-851547-REC",
+        "type": "Recyclable",
+        "current_level": 40,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.70409,
+            "lon": 1041002.39996
+        }
+    },
+    {
+        "id": "PBL-851547-ORG",
+        "type": "Organique",
+        "current_level": 88,
+        "max_capacity": 660,
+        "density": 0.5,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.70409,
+            "lon": 1041002.39996
+        }
+    },
+    {
+        "id": "PBL-898863-VER",
+        "type": "Verre",
+        "current_level": 261,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.02723,
+            "lon": 1040936.5433
+        }
+    },
+    {
+        "id": "PBL-898863-REC",
+        "type": "Recyclable",
+        "current_level": 234,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.02723,
+            "lon": 1040936.5433
+        }
+    },
+    {
+        "id": "PBL-898863-ORG",
+        "type": "Organique",
+        "current_level": 125,
+        "max_capacity": 660,
+        "density": 0.5,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.02723,
+            "lon": 1040936.5433
+        }
+    },
+    {
+        "id": "PBL-851548-VER",
+        "type": "Verre",
+        "current_level": 317,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.39378,
+            "lon": 1041007.181
+        }
+    },
+    {
+        "id": "PBL-851548-REC",
+        "type": "Recyclable",
+        "current_level": 220,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.39378,
+            "lon": 1041007.181
+        }
+    }
+]

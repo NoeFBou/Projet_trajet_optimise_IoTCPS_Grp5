@@ -1,59 +1,104 @@
+"""
+Service Aggregator
+------------------
+Orchestrateur central du système de gestion des déchets.
+
+Responsabilités :
+1. Consommation des événements Kafka (niveaux de remplissage).
+2. Maintenance de l'état global des poubelles en mémoire.
+3. Déclenchement de l'optimisation des tournées (VRP) par type de déchet.
+4. Enregistrement de l'historique et communication avec le simulateur.
+
+Auteur : moi
+"""
+
 import json
 import time
 import threading
+import datetime
+import concurrent.futures
+from typing import List, Dict, Any, Optional
+
 import requests
-import schedule
+import pymongo
+from flask import Flask, jsonify
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
-import pymongo
-import datetime
 
-# --- CONFIG ---
+# --- CONFIGURATION & CONSTANTES ---
+
 KAFKA_BROKER = "kafka:9092"
 KAFKA_TOPIC_IN = "bin-levels"
+KAFKA_GROUP_ID = "aggregator-group"
+
+# Endpoints des microservices
 VRP_SERVICE_URL = "http://vrp-service:8000/solve_vrp"
-TRUCK_SERVICE_URL = "http://truck-service:5001/api/trucks"
-TRUCK_SERVICE_INTERNAL_URL = "http://truck-service:5000/api/trucks"
-MONGO_URI = "mongodb://mongodb:27017/"
-mongo_client = pymongo.MongoClient(MONGO_URI)
-db = mongo_client["waste_management"]
-routes_collection = db["routes_history"]
+TRUCK_SERVICE_URL = "http://truck-service:5000/api/trucks"
 SIMULATOR_URL = "http://simulator:5000/empty"
 
-# Dépôt central
-DEPOT_COORDS = [43.7102, 7.2620]
+# Base de données
+MONGO_URI = "mongodb://mongodb:27017/"
+DB_NAME = "waste_management"
+COLLECTION_HISTORY = "routes_history"
 
-# --- ÉTAT EN MÉMOIRE ---
-BIN_STATE_DB = {}
+# Paramètres Géographiques
+DEPOT_COORDS = [43.7102, 7.2620]  # [Lat, Lon]
+
+# Mapping Code Poubelle (Suffixe ID) -> Type Camion (API Truck)
+TYPE_MAPPING = {
+    "VER": "Verre",  # Verre
+    "REC": "Recyclable",  # Emballages/Jaune
+    "ORG": "Organique",  # Compost
+    "TOU": "TousDechets"  # Ordures Ménagères
+}
+
+# État Global (Thread-Safe)
+BIN_STATE_DB: Dict[str, Dict] = {}
 DB_LOCK = threading.Lock()
 
+# --- INITIALISATION ---
+
+app = Flask(__name__)
+
+try:
+    mongo_client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+    db = mongo_client[DB_NAME]
+    routes_collection = db[COLLECTION_HISTORY]
+except Exception as e:
+    print(f"[FATAL] Impossible de connecter MongoDB : {e}")
+    routes_collection = None
+
+
+# --- LOGIQUE KAFKA ---
 
 def start_kafka_consumer():
-    """Écoute Kafka dans un thread séparé et met à jour l'état des poubelles"""
-
-
-    print("[Aggregator] Tentative de connexion au Consumer Kafka...", flush=True)
-
+    """
+    Démarre le consommateur Kafka en arrière-plan.
+    Met à jour BIN_STATE_DB à chaque nouveau message reçu.
+    """
+    print("[Aggregator] Démarrage du thread Kafka...", flush=True)
     consumer = None
+
+    # Tentative de reconnexion résiliente
     while consumer is None:
         try:
             consumer = KafkaConsumer(
                 KAFKA_TOPIC_IN,
                 bootstrap_servers=KAFKA_BROKER,
-                auto_offset_reset='earliest',  # On prend tout depuis le début
+                auto_offset_reset='earliest',
                 enable_auto_commit=True,
-                group_id='aggregator-group',
+                group_id=KAFKA_GROUP_ID,
                 value_deserializer=lambda x: json.loads(x.decode('utf-8'))
             )
-            print("[Aggregator] Connexion Kafka (Consumer) RÉUSSIE !", flush=True)
+            print(f"[Aggregator] Connecté au broker {KAFKA_BROKER}", flush=True)
         except NoBrokersAvailable:
-            print("[Aggregator] Kafka pas prêt... on attend 5s.", flush=True)
+            print("[Aggregator] Broker indisponible, nouvelle tentative dans 5s...")
             time.sleep(5)
         except Exception as e:
-            print(f"[Aggregator] Erreur connexion Kafka: {e}", flush=True)
+            print(f"[Aggregator] Erreur inattendue Kafka: {e}")
             time.sleep(5)
 
-    # Une fois connecté, on boucle pour lire les messages
+    # Boucle de consommation
     try:
         for message in consumer:
             bin_data = message.value
@@ -61,128 +106,224 @@ def start_kafka_consumer():
             level_code = bin_data.get("level_code")
 
             if bin_id:
-                # On protège l'écriture avec un Lock pour éviter les conflits avec le thread principal
                 with DB_LOCK:
-                    # On stocke les infos nécessaires pour le VRP
-                    # Le message Kafka contient déjà coords (lat/lon) et weight grâce au service Fusion
                     coords = bin_data.get('coords', {})
 
+                    # Déduction du type de déchet (Priorité: Message > Suffixe ID > Défaut)
+                    detected_type = bin_data.get("type")
+
+                    if not detected_type or detected_type == "Indefini":
+                        try:
+                            # Extraction du suffixe (ex: PBL-001-VER -> VER)
+                            suffix = bin_id.split('-')[-1]
+                            detected_type = TYPE_MAPPING.get(suffix, "general")
+                        except IndexError:
+                            detected_type = "general"
+
+                    # Mise à jour de l'état local
                     BIN_STATE_DB[bin_id] = {
+                        "type": detected_type,
                         "level_code": level_code,
                         "weight": bin_data.get('weight', 0.0),
                         "lat": coords.get('lat', 0.0),
                         "lon": coords.get('lon', 0.0),
                         "last_update": time.time()
                     }
-
-                #print(f"[Aggregator] Reçu: {bin_id} est à l'état {level_code}", flush=True)
-
     except Exception as e:
-        print(f"[Aggregator] Erreur lecture Kafka : {e}", flush=True)
+        print(f"[Aggregator] Arrêt du consumer suite à une erreur : {e}", flush=True)
 
 
-def get_available_trucks():
-    """Récupère les camions actifs via l'API Truck"""
+# --- LOGIQUE MÉTIER ---
+
+def get_available_trucks() -> List[Dict]:
+    """
+    Récupère la liste des camions actifs depuis le microservice TruckAPI.
+
+    Returns:
+        List[Dict]: Liste de dictionnaires représentant les camions.
+                    Format normalisé: {'truck_id': str, 'capacity': float, 'waste_type': str}
+    """
     try:
-        # On utilise l'URL interne au réseau Docker
-        response = requests.get(f"{TRUCK_SERVICE_INTERNAL_URL}?status=active")
+        response = requests.get(f"{TRUCK_SERVICE_URL}?status=active", timeout=2)
         if response.status_code == 200:
             data = response.json()
-            # Selon le format de ton API, ça peut être data directement ou data['trucks']
-            # J'ai vu dans ton app.py que tu retournes jsonify(trucks) -> une liste
-            if isinstance(data, list):
-                return data
-            return data.get("trucks", [])
+            raw_trucks = data if isinstance(data, list) else data.get("trucks", [])
+
+            unique_trucks = {}
+            for t in raw_trucks:
+                # Normalisation de l'ID (MongoDB _id vs id string)
+                tid = t.get('truck_id') or t.get('id') or str(t.get('_id'))
+                if tid:
+                    t['truck_id'] = tid
+                    t.setdefault('waste_type', 'general')  # Valeur par défaut
+                    unique_trucks[tid] = t
+
+            return list(unique_trucks.values())
         else:
-            print(f"[Aggregator] Erreur API Camions: {response.status_code}")
+            print(f"[Aggregator] Erreur TruckAPI: HTTP {response.status_code}")
             return []
     except Exception as e:
-        print(f"[Aggregator] Exception connexion Camions: {e}")
+        print(f"[Aggregator] Exception lors de la récupération des camions : {e}")
         return []
 
 
-def trigger_optimization():
-    print("\n--- [Aggregator] Lancement cycle optimisation ---", flush=True)
+def prepare_vrp_payloads(bins_db: Dict, trucks: List[Dict]) -> Dict[str, Dict]:
+    """
+    Prépare les données pour le service VRP, segmentées par type de déchet.
 
-    bins_to_collect = []
+    Args:
+        bins_db (Dict): Base de données locale des poubelles.
+        trucks (List[Dict]): Liste complète des camions disponibles.
 
-    with DB_LOCK:
-        items = list(BIN_STATE_DB.items())
-
-    for b_id, info in items:
+    Returns:
+        Dict[str, Dict]: Dictionnaire {waste_type: payload_vrp}
+    """
+    # 1. Filtrage des poubelles critiques (E4, E5)
+    bins_by_type = {}
+    for b_id, info in bins_db.items():
         if info['level_code'] in ['E4', 'E5']:
             if info['lat'] != 0.0 and info['lon'] != 0.0:
-                bins_to_collect.append({
+                b_type = info.get('type', 'general')
+
+                if b_type not in bins_by_type:
+                    bins_by_type[b_type] = []
+
+                bins_by_type[b_type].append({
                     "id": b_id,
                     "lat": info['lat'],
                     "lon": info['lon'],
                     "weight": info['weight']
                 })
 
-    if not bins_to_collect:
-        print(f"[Aggregator] Rien à ramasser (Sur {len(items)} poubelles).", flush=True)
-        return
+    if not bins_by_type:
+        return {}
 
-    print(f"[Aggregator] {len(bins_to_collect)} poubelles critiques.", flush=True)
+    # 2. Construction des payloads par flux
+    payloads = {}
+    for waste_type, bins_list in bins_by_type.items():
+        # Filtrage des camions compatibles pour ce flux
+        compatible_trucks = []
+        for t in trucks:
+            t_type = t.get('waste_type', 'general')
+            # On garde le camion s'il correspond au type ou s'il est polyvalent ('all')
+            if t_type == waste_type or t_type == 'all':
+                tid = t.get('truck_id')
+                cap_tonnes = float(t.get('capacity', 10))
+                compatible_trucks.append({
+                    "id": tid,
+                    "capacity": cap_tonnes * 1000  # Conversion Tonnes -> Kg
+                })
 
-    trucks = get_available_trucks()
-    if not trucks:
-        trucks = [{"truck_id": "TEST-TRUCK-01", "capacity": 20.0}]
-
-    vrp_trucks = []
-    for t in trucks:
-        tid = t.get('truck_id') or str(t.get('_id'))
-        cap_kg = t.get('capacity', 10) * 1000
-        vrp_trucks.append({"id": tid, "capacity": cap_kg})
-
-    payload = {"bins": bins_to_collect, "trucks": vrp_trucks, "depot": DEPOT_COORDS}
-
-    try:
-        print("[Aggregator] Envoi demande au VRP...", flush=True)
-        resp = requests.post(VRP_SERVICE_URL, json=payload)
-
-        if resp.status_code == 200:
-            result = resp.json()
-            nb_routes = len(result.get('routes', []))
-            print(f"[Aggregator] SUCCÈS VRP ! {nb_routes} tournées.", flush=True)
-
-            if nb_routes > 0:
-                save_data = {
-                    "timestamp": datetime.datetime.utcnow(),
-                    "total_fleet_time": result.get('total_fleet_time'),
-                    "routes": result.get('routes')
-                }
-                routes_collection.insert_one(save_data)
-
-                collected_ids = []
-                for route in result['routes']:
-                    for stop in route['stops']:
-                        if "DEPOT" not in stop['point_id']:
-                            collected_ids.append(stop['point_id'])
-
-                if collected_ids:
-                    print(f"[Aggregator] Envoi ordre de vidage pour {len(collected_ids)} poubelles...", flush=True)
-                    try:
-                        # Appel HTTP vers le simulateur
-                        requests.post(SIMULATOR_URL, json={"bin_ids": collected_ids}, timeout=2)
-                    except Exception as e:
-                        print(f"[Aggregator] Erreur contact simulateur: {e}", flush=True)
-
+        if compatible_trucks:
+            payloads[waste_type] = {
+                "bins": bins_list,
+                "trucks": compatible_trucks,
+                "depot": DEPOT_COORDS
+            }
         else:
-            print(f"[Aggregator] Échec VRP: {resp.status_code}", flush=True)
+            print(f"[Attention] Aucun camion disponible pour le flux : {waste_type}")
 
-    except Exception as e:
-        print(f"[Aggregator] Erreur générale: {e}", flush=True)
+    return payloads
+
+
+# --- API ---
+
+@app.route('/run-optimization', methods=['POST'])
+def run_optimization():
+    """
+    Endpoint principal pour déclencher le calcul des tournées.
+    Exécute les appels VRP en parallèle pour chaque type de déchet.
+    """
+    print("\n--- [Cycle Optimisation] Démarrage ---", flush=True)
+
+    # 1. Instantané Thread-Safe de la DB
+    with DB_LOCK:
+        snapshot_db = BIN_STATE_DB.copy()
+
+    # 2. Récupération ressources
+    available_trucks = get_available_trucks()
+    payloads = prepare_vrp_payloads(snapshot_db, available_trucks)
+
+    if not payloads:
+        return jsonify({"status": "no_action", "message": "Aucune poubelle critique ou camions manquants."})
+
+    # 3. Exécution Parallèle (VRP Multi-Flux)
+    final_routes = []
+    total_fleet_time = 0
+    collected_bin_ids = []
+
+    print(f"[Aggregator] Traitement parallèle de {len(payloads)} flux : {list(payloads.keys())}")
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Soumission des requêtes
+        future_map = {
+            executor.submit(requests.post, VRP_SERVICE_URL, json=p): w_type
+            for w_type, p in payloads.items()
+        }
+
+        for future in concurrent.futures.as_completed(future_map):
+            waste_type = future_map[future]
+            try:
+                response = future.result()
+                if response.status_code == 200:
+                    result = response.json()
+
+                    if result.get('status') == 'optimized':
+                        routes = result.get('routes', [])
+                        print(f"   [OK] Flux {waste_type} : {len(routes)} tournée(s) générée(s).")
+
+                        for route in routes:
+                            # Enrichissement ID camion pour affichage dashboard (ex: "T1 (glass)")
+                            route['truck_id'] = f"{route['truck_id']} ({waste_type})"
+                            final_routes.append(route)
+
+                            # Collecte des IDs poubelles pour le simulateur
+                            for stop in route['stops']:
+                                if "DEPOT" not in stop['point_id']:
+                                    collected_bin_ids.append(stop['point_id'])
+
+                        total_fleet_time += result.get('total_fleet_time', 0)
+                    else:
+                        print(f"   [Echec VRP] Flux {waste_type} : {result.get('message')}")
+                else:
+                    print(f"   [Erreur HTTP] Flux {waste_type} : Code {response.status_code}")
+
+            except Exception as e:
+                print(f"   [Exception] Erreur lors du traitement du flux {waste_type} : {e}")
+
+    # 4. Sauvegarde et Feedback
+    if final_routes:
+        # Persistance dans MongoDB
+        if routes_collection is not None:
+            history_entry = {
+                "timestamp": datetime.datetime.utcnow(),
+                "total_fleet_time": total_fleet_time,
+                "routes": final_routes,
+                "optimization_details": list(payloads.keys())
+            }
+            routes_collection.insert_one(history_entry)
+
+        # Notification Simulateur (Vidage des poubelles)
+        if collected_bin_ids:
+            try:
+                requests.post(SIMULATOR_URL, json={"bin_ids": collected_bin_ids}, timeout=1)
+            except Exception:
+                pass  # Non-bloquant pour la prod
+
+        return jsonify({
+            "status": "success",
+            "routes_count": len(final_routes),
+            "collected_bins": len(collected_bin_ids),
+            "details": f"Optimisé pour : {', '.join(payloads.keys())}"
+        })
+
+    return jsonify({"status": "failed", "message": "Aucune solution trouvée par le VRP."})
 
 
 if __name__ == "__main__":
-    t = threading.Thread(target=start_kafka_consumer)
-    t.daemon = True
-    t.start()
+    # Lancement du consumer dans un thread daemon
+    kafka_thread = threading.Thread(target=start_kafka_consumer, daemon=True)
+    kafka_thread.start()
 
-    print("[Aggregator] Service démarré.", flush=True)
-    time.sleep(5)
-
-    while True:
-        trigger_optimization()
-        time.sleep(20)
+    print("[Aggregator] Service API prêt sur le port 5000", flush=True)
+    app.run(host='0.0.0.0', port=5000)

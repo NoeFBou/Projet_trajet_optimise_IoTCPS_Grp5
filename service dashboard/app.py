@@ -1,204 +1,376 @@
-import streamlit as st
-import pymongo
-import folium
-from streamlit_folium import st_folium
-import requests
-import random
-from datetime import datetime
+"""
+Dashboard de Supervision
+------------------------------------
+Interface utilisateur pour le suivi des tournées de collecte de déchets.
 
-# Configuration
+Fonctionnalités :
+1. Visualisation cartographique des itinéraires (Folium).
+2. Déclenchement manuel de l'optimisation (via Aggregator).
+3. Consultation de l'historique des tournées.
+4. Statistiques opérationnelles (Temps de flotte, charge).
+
+Auteur : wi
+"""
+
+import time
+import requests
+import folium
+import pymongo
+from datetime import datetime
+from zoneinfo import ZoneInfo  # Nécessite Python 3.9+ (Standard)
+from typing import Optional, List, Dict, Tuple, Any
+
+import streamlit as st
+from streamlit_folium import st_folium
+
+# --- CONFIGURATION & CONSTANTES ---
+
+# Paramètres de l'application
+PAGE_TITLE = "🚛 Suivi des Tournées de Collecte (Nice)"
+LAYOUT = "wide"
+NICE_COORDS = [43.7102, 7.2620]
+
+# Timezone
+PARIS_TZ = ZoneInfo("Europe/Paris")
+
+# Connexions Services
 MONGO_URI = "mongodb://mongodb:27017/"
+DB_NAME = "waste_management"
+COLLECTION_HISTORY = "routes_history"
+
+AGGREGATOR_URL = "http://aggregator-service:5000/run-optimization"
 OSRM_URL = "http://osrm-backend:5000"
 
-st.set_page_config(page_title="Optimisation Déchets Nice", layout="wide")
+# Configuration Visuelle
+COLORS_PALETTE = [
+    "red", "blue", "green", "purple", "orange",
+    "darkred", "cadetblue", "darkgreen", "darkblue", "black"
+]
 
+# Mapping Codes Poubelles -> Libellés UI
+BIN_TYPE_MAPPING = {
+    "VER": "Verre 🟢",
+    "REC": "Recyclable 🟡",
+    "ORG": "Organique 🟤",
+    "TOU": "Tout-Venant ⚫"
+}
 
-# --- FONCTIONS ---
+# --- UTILITAIRES ---
+
+def format_duration_human(seconds: int) -> str:
+    """Convertit des secondes en format lisible (ex: 1h 15m)."""
+    minutes, _ = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours > 0:
+        return f"{int(hours)}h {int(minutes):02d}m"
+    return f"{int(minutes)} min"
+
+def extract_waste_type_from_truck_id(truck_id: str) -> str:
+    """
+    Extrait le type de déchet du nom du camion généré par l'aggregator.
+    Ex: 'T1 (glass)' -> 'glass'
+    """
+    if "(" in truck_id and ")" in truck_id:
+        try:
+            return truck_id.split("(")[1].split(")")[0]
+        except:
+            return "Autre"
+    return "Général"
+
+# --- COUCHE DONNÉES (BACKEND) ---
 
 @st.cache_resource
-def get_db():
+def init_mongo_connection() -> Optional[pymongo.database.Database]:
+    """
+    Établit la connexion persistante à MongoDB.
+    Utilise le cache de Streamlit pour éviter les reconnexions multiples.
+    """
     try:
-        client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
+        client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000)
         client.server_info()
-        return client["waste_management"]
+        return client[DB_NAME]
     except Exception as e:
-        st.error(f"Impossible de se connecter à MongoDB : {e}")
+        st.error(f"⛔ Erreur critique : Impossible de connecter MongoDB ({e})")
         return None
 
+def fetch_route_geometry(waypoints: List[str]) -> Optional[dict]:
+    """
+    Interroge OSRM pour obtenir la géométrie précise (GeoJSON) entre des points.
 
-def get_route_geometry(waypoints):
-    """Interroge OSRM pour obtenir la géométrie précise"""
+    Args:
+        waypoints: Liste de chaines "lon,lat".
+    """
     if len(waypoints) < 2:
         return None
 
-    # On arrondit pour éviter les URLs trop longues
-    waypoints_clean = []
+    # Nettoyage et formatage des coordonnées
+    clean_waypoints = []
     for wp in waypoints:
         try:
             lon, lat = wp.split(',')
-            waypoints_clean.append(f"{float(lon):.6f},{float(lat):.6f}")
-        except:
+            clean_waypoints.append(f"{float(lon):.6f},{float(lat):.6f}")
+        except ValueError:
             continue
 
-    if not waypoints_clean: return None
+    if not clean_waypoints:
+        return None
 
-    coords_str = ";".join(waypoints_clean)
+    coords_str = ";".join(clean_waypoints)
     url = f"{OSRM_URL}/route/v1/driving/{coords_str}?overview=full&geometries=geojson"
 
     try:
         resp = requests.get(url, timeout=2)
         if resp.status_code == 200:
-            data = resp.json()
-            return data['routes'][0]['geometry']
-    except Exception:
+            return resp.json()['routes'][0]['geometry']
+    except requests.RequestException:
         return None
     return None
 
+def parse_bin_id(point_id: str) -> Tuple[str, str]:
+    """
+    Décode un ID technique (ex: PBL-0123-VER) en informations lisibles.
 
-# --- UI PRINCIPALE ---
+    Returns:
+        (Type_Lisible, Identifiant_Court)
+    """
+    if "DEPOT" in point_id:
+        return "Dépôt", "Centre Logistique"
 
-st.title("🚛 Suivi des Tournées de Collecte (Nice)")
+    parts = point_id.split('-')
+    # Format attendu : PBL-{NUMERO}-{CODE}
+    if len(parts) >= 3:
+        code = parts[-1]
+        label = BIN_TYPE_MAPPING.get(code, code)
+        return label, parts[1]
 
-db = get_db()
+    return "Inconnu", point_id
 
-if db is not None:
-    col = db["routes_history"]
+def trigger_optimization() -> dict:
+    """Appelle le service Aggregator pour lancer le calcul VRP."""
+    try:
+        response = requests.post(AGGREGATOR_URL, timeout=70)
+        if response.status_code == 200:
+            return response.json()
+        return {"status": "error", "message": f"HTTP {response.status_code}"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
-    # 1. RÉCUPÉRATION HISTORIQUE
-    history_cursor = col.find({}, {"timestamp": 1}).sort("timestamp", -1)
-    history_list = list(history_cursor)
 
-    if not history_list:
-        st.warning("⚠️ Aucune donnée de route trouvée en base. Attendez que l'Aggregator lance une optimisation.")
-    else:
-        # --- BARRE LATÉRALE : SÉLECTION SIMULATION ---
-        st.sidebar.header("📅 Historique")
+# --- COUCHE PRÉSENTATION (UI) ---
 
-        options_map = {
-            doc["timestamp"].strftime("%d/%m/%Y à %H:%M:%S"): doc["_id"]
-            for doc in history_list
-        }
+def render_sidebar(history_collection) -> list:
+    """Gère la barre latérale : Contrôles et Sélection de l'historique."""
+    st.sidebar.title("🎮 Contrôle")
 
-        selected_label = st.sidebar.selectbox(
-            "Choisir une optimisation :",
-            options=list(options_map.keys()),
-            index=0
-        )
+    # 1. Bouton Action
+    if st.sidebar.button("🚀 GÉNÉRER TOURNEES", type="primary"):
+        with st.spinner("Calcul en cours..."):
+            result = trigger_optimization()
+            if result.get('status') == 'success':
+                st.sidebar.success(f"Succès ! {result['routes_count']} tournées.")
+                time.sleep(1.5)
+                st.rerun()
+            elif result.get('status') == 'no_action':
+                st.sidebar.info("Rien à faire (aucune poubelle critique).")
+            else:
+                st.sidebar.error(f"Échec : {result.get('message')}")
 
-        selected_id = options_map[selected_label]
-        simulation_data = col.find_one({"_id": selected_id})
+    st.sidebar.markdown("---")
 
-        # --- BARRE LATÉRALE : CASES À COCHER CAMIONS ---
-        st.sidebar.markdown("---")
-        st.sidebar.header("🚚 Flotte de camions")
+    # 2. Sélecteur d'Historique
+    st.sidebar.header("📅 Historique")
 
-        routes = simulation_data.get("routes", [])
+    # Récupération des dates disponibles (Tri décroissant)
+    cursor = history_collection.find({}, {"timestamp": 1}).sort("timestamp", -1)
+    history_docs = list(cursor)
 
-        # --- CORRECTION ICI : DÉDOUBLONNAGE DES IDS ---
-        # On récupère tous les IDs bruts
-        raw_truck_ids = [r.get("truck_id", f"Truck-{i}") for i, r in enumerate(routes)]
-        # On crée une liste unique et triée pour la sidebar
-        unique_truck_ids = sorted(list(set(raw_truck_ids)))
-        # ----------------------------------------------
+    if not history_docs:
+        st.sidebar.warning("Aucune donnée disponible.")
+        return []
 
-        # -- Gestion Sélection / Désélection massive --
-        col_btn1, col_btn2 = st.sidebar.columns(2)
-        if col_btn1.button("Tout cocher"):
-            for tid in unique_truck_ids:
-                st.session_state[f"chk_{tid}"] = True
+    # Conversion UTC -> Paris pour l'affichage
+    options_map = {}
+    for doc in history_docs:
+        ts_utc = doc["timestamp"].replace(tzinfo=datetime.max.tzinfo).replace(tzinfo=None) # Ensure naive first if needed or handle tz
+        ts_utc = doc["timestamp"]
+        if ts_utc.tzinfo is None:
+            ts_utc = ts_utc.replace(tzinfo=ZoneInfo("UTC"))
 
-        if col_btn2.button("Tout décocher"):
-            for tid in unique_truck_ids:
-                st.session_state[f"chk_{tid}"] = False
+        ts_paris = ts_utc.astimezone(PARIS_TZ)
+        label_str = ts_paris.strftime("%d/%m/%Y à %H:%M:%S")
+        options_map[label_str] = doc["_id"]
 
-        st.sidebar.write(f"*{len(unique_truck_ids)} camions déployés*")
+    selected_label = st.sidebar.selectbox("Choisir une simulation :", options=list(options_map.keys()), index=0)
+    selected_id = options_map[selected_label]
 
-        selected_trucks = []
+    # Chargement de la simulation complète
+    simulation_data = history_collection.find_one({"_id": selected_id})
+    all_routes = simulation_data.get("routes", [])
 
-        # -- Boucle de création des Checkbox (Sur la liste UNIQUE) --
-        container = st.sidebar.container()
+    # 3. Filtre par Type de Déchet
+    st.sidebar.markdown("---")
 
-        with container:
-            for truck_id in unique_truck_ids:
-                # On initialise la clé dans session_state si elle n'existe pas
-                if f"chk_{truck_id}" not in st.session_state:
-                    st.session_state[f"chk_{truck_id}"] = True
+    # Identification des types disponibles dans cette simulation
+    available_types = set()
+    for r in all_routes:
+        w_type = extract_waste_type_from_truck_id(r.get("truck_id", ""))
+        available_types.add(w_type)
 
-                # Création de la checkbox
-                # La clé est unique car truck_id vient de unique_truck_ids
-                is_checked = st.checkbox(
-                    f"Camion {truck_id}",
-                    key=f"chk_{truck_id}"
-                )
+    st.sidebar.header(f"📍 Filtres ({len(all_routes)} trajets)")
 
-                if is_checked:
-                    selected_trucks.append(truck_id)
+    selected_types = st.sidebar.multiselect(
+        "Filtrer par type :",
+        options=sorted(list(available_types)),
+        default=sorted(list(available_types))
+    )
 
-        # --- AFFICHAGE PRINCIPAL ---
+    # Filtrage effectif
+    routes_filtered = [
+        r for r in all_routes
+        if extract_waste_type_from_truck_id(r.get("truck_id", "")) in selected_types
+    ]
 
-        # On filtre les routes si leur ID est dans la liste sélectionnée
-        routes_to_display = [r for r in routes if r.get("truck_id") in selected_trucks]
+    # 4. Liste des trajets (Avec Durée)
 
-        if not routes_to_display:
-            st.info("Aucun camion sélectionné. Cochez des cases dans la barre latérale.")
-        else:
-            # Map centrée sur Nice
-            m = folium.Map(location=[43.7102, 7.2620], zoom_start=13)
+    # Boutons de masse
+    col1, col2 = st.sidebar.columns(2)
+    if col1.button("Tout cocher"):
+        for i in range(len(all_routes)): st.session_state[f"chk_{i}"] = True
+    if col2.button("Tout décocher"):
+        for i in range(len(all_routes)): st.session_state[f"chk_{i}"] = False
 
-            colors_palette = ["red", "blue", "green", "purple", "orange", "darkred", "cadetblue", "darkgreen",
-                              "darkblue", "black"]
-            total_time_filtered = 0
+    selected_indices = []
 
-            progress_bar = st.progress(0)
+    with st.sidebar.container():
 
-            for i, truck_route in enumerate(routes_to_display):
-                truck_id = truck_route.get("truck_id", "Unknown")
-                stops = truck_route.get("stops", [])
-                total_time_filtered += truck_route.get("total_time_seconds", 0)
+        if not routes_filtered:
+            st.sidebar.info("Aucun trajet pour ce type.")
 
-                # Couleur constante basée sur le nom
-                color_idx = abs(hash(truck_id)) % len(colors_palette)
-                color = colors_palette[color_idx]
+        for route in routes_filtered:
+            original_idx = all_routes.index(route)
 
-                waypoints = []
-                for stop in stops:
-                    waypoints.append(f"{stop['lon']},{stop['lat']}")
+            tid = route.get("truck_id", "Inconnu")
+            nb_stops = len(route.get("stops", [])) - 2  # -2 pour retirer DEPOT start/end
+            load = route.get("total_load", 0)
+            duration_sec = route.get("total_time_seconds", 0)
 
-                    is_depot = "DEPOT" in stop['point_id']
-                    icon_color = "black" if is_depot else color
-                    icon_icon = "home" if is_depot else "trash"
+            duration_str = format_duration_human(duration_sec)
 
-                    # Popup un peu plus riche
-                    charge = stop.get('load_after_visit', 0)
-                    popup_html = f"<b>{stop['point_id']}</b><br>Camion: {truck_id}<br>Charge: {charge:.1f}kg"
+            key = f"chk_{original_idx}"
+            if key not in st.session_state:
+                st.session_state[key] = True
 
-                    folium.Marker(
-                        location=[stop['lat'], stop['lon']],
-                        popup=folium.Popup(popup_html, max_width=200),
-                        icon=folium.Icon(color=icon_color, icon=icon_icon, prefix='fa')
-                    ).add_to(m)
+            # Label enrichi avec la durée
+            label = f"{tid}\n⏱️ {duration_str} | 📦 {int(load)}kg"
 
-                geo_data = get_route_geometry(waypoints)
-                if geo_data:
-                    folium.GeoJson(
-                        geo_data,
-                        name=f"Trajet {truck_id}",
-                        style_function=lambda x, col=color: {'color': col, 'weight': 4, 'opacity': 0.8},
-                        tooltip=f"Trajet {truck_id}"
-                    ).add_to(m)
+            if st.checkbox(label, key=key):
+                selected_indices.append(original_idx)
 
-                progress_bar.progress((i + 1) / len(routes_to_display))
+    return [all_routes[i] for i in selected_indices], selected_label
 
-            progress_bar.empty()
 
-            # Stats
-            st.markdown("### 📊 Statistiques")
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Simulation", selected_label)
-            with col2:
-                st.metric("Trajets affichés", f"{len(routes_to_display)}")
-            with col3:
-                st.metric("Temps cumulé", f"{int(total_time_filtered / 60)} min")
+def render_map(routes_to_display: list):
+    """Génère et affiche la carte Folium."""
+    m = folium.Map(location=NICE_COORDS, zoom_start=13)
 
-            st_folium(m, width=1400, height=700)
+    max_duration_seconds = 0
+    progress_bar = st.progress(0)
+
+    for idx, route in enumerate(routes_to_display):
+        truck_id = route.get("truck_id", "Unknown")
+        stops = route.get("stops", [])
+        duration = route.get("total_time_seconds", 0)
+
+        # Tracking du temps max (Makespan)
+        if duration > max_duration_seconds:
+            max_duration_seconds = duration
+
+        # Assignation couleur (déterministe basé sur le hash du nom)
+        color = COLORS_PALETTE[abs(hash(truck_id)) % len(COLORS_PALETTE)]
+        waypoints_poly = []
+
+        # --- A. Création des Marqueurs ---
+        for stop in stops:
+            waypoints_poly.append(f"{stop['lon']},{stop['lat']}")
+
+            is_depot = "DEPOT" in stop['point_id']
+            icon_color = "black" if is_depot else color
+            icon_name = "home" if is_depot else "trash"
+
+            # Contenu Popup HTML
+            bin_type, bin_ref = parse_bin_id(stop['point_id'])
+            collected = stop.get('load_after_visit', 0)
+
+            if is_depot:
+                popup_html = f"<b>🏢 DÉPÔT</b><br>Camion: {truck_id}"
+            else:
+                popup_html = f"""
+                <div style="font-family: sans-serif; min-width: 140px;">
+                    <h5 style="margin:0; color:{color}">🗑️ {bin_type}</h5>
+                    <hr style="margin: 4px 0;">
+                    <b>Ref:</b> {bin_ref}<br>
+                    <b>Camion:</b> {truck_id}<br>
+                    <b>Charge:</b> {collected:.1f} kg
+                </div>
+                """
+
+            folium.Marker(
+                location=[stop['lat'], stop['lon']],
+                popup=folium.Popup(popup_html, max_width=300),
+                icon=folium.Icon(color=icon_color, icon=icon_name, prefix='fa')
+            ).add_to(m)
+
+        # --- B. Tracé de la Route (Polyline) ---
+        geo_data = fetch_route_geometry(waypoints_poly)
+        if geo_data:
+            dur_str = format_duration_human(duration)
+            folium.GeoJson(
+                geo_data,
+                name=f"Route {truck_id}",
+                style_function=lambda x, col=color: {'color': col, 'weight': 4, 'opacity': 0.8},
+                tooltip=f"{truck_id} ({dur_str})"
+            ).add_to(m)
+
+        # Mise à jour barre de progression
+        progress_bar.progress((idx + 1) / len(routes_to_display))
+
+    progress_bar.empty()
+    return m, max_duration_seconds
+
+
+# --- MAIN ---
+
+def main():
+    st.set_page_config(page_title=PAGE_TITLE, layout=LAYOUT)
+    st.title(PAGE_TITLE)
+
+    db = init_mongo_connection()
+    if db is None:
+        st.stop()
+
+    # 1. Gestion Sidebar & Sélection
+    selected_routes, sim_label = render_sidebar(db[COLLECTION_HISTORY])
+
+    if not selected_routes:
+        st.info("Aucune tournée sélectionnée ou historique vide.")
+        return
+
+    # 2. Rendu de la Carte
+    map_obj, max_time = render_map(selected_routes)
+
+    # 3. Affichage Statistiques (KPIs)
+    st.markdown("### Indicateurs")
+    kpi1, kpi2, kpi3 = st.columns(3)
+
+    with kpi1:
+        st.metric("📅 Date", sim_label)
+    with kpi2:
+        st.metric("🚛 Flotte Active", f"{len(selected_routes)} Camions")
+    with kpi3:
+        st.metric("⏱️ Fin Opération", format_duration_human(max_time))
+    # 4. Affichage final
+    st_folium(map_obj, width=1600, height=700)
+
+
+if __name__ == "__main__":
+    main()

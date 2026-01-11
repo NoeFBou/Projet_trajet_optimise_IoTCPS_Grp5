@@ -26,7 +26,7 @@ from streamlit_folium import st_folium
 # --- CONFIGURATION & CONSTANTES ---
 
 # Paramètres de l'application
-PAGE_TITLE = "🚛 Suivi des Tournées de Collecte (Nice)"
+PAGE_TITLE = " Suivi des Tournées de Collecte (Nice)"
 LAYOUT = "wide"
 NICE_COORDS = [43.7102, 7.2620]
 
@@ -160,10 +160,10 @@ def trigger_optimization() -> dict:
 
 def render_sidebar(history_collection) -> list:
     """Gère la barre latérale : Contrôles et Sélection de l'historique."""
-    st.sidebar.title("🎮 Contrôle")
+    st.sidebar.title("Contrôle")
 
     # 1. Bouton Action
-    if st.sidebar.button("🚀 GÉNÉRER TOURNEES", type="primary"):
+    if st.sidebar.button(" GÉNÉRER TOURNEES", type="primary"):
         with st.spinner("Calcul en cours..."):
             result = trigger_optimization()
             if result.get('status') == 'success':
@@ -178,7 +178,7 @@ def render_sidebar(history_collection) -> list:
     st.sidebar.markdown("---")
 
     # 2. Sélecteur d'Historique
-    st.sidebar.header("📅 Historique")
+    st.sidebar.header("Historique")
 
     # Récupération des dates disponibles (Tri décroissant)
     cursor = history_collection.find({}, {"timestamp": 1}).sort("timestamp", -1)
@@ -186,7 +186,7 @@ def render_sidebar(history_collection) -> list:
 
     if not history_docs:
         st.sidebar.warning("Aucune donnée disponible.")
-        return []
+        return [], None
 
     # Conversion UTC -> Paris pour l'affichage
     options_map = {}
@@ -216,7 +216,7 @@ def render_sidebar(history_collection) -> list:
         w_type = extract_waste_type_from_truck_id(r.get("truck_id", ""))
         available_types.add(w_type)
 
-    st.sidebar.header(f"📍 Filtres ({len(all_routes)} trajets)")
+    st.sidebar.header(f"Filtres ({len(all_routes)} trajets)")
 
     selected_types = st.sidebar.multiselect(
         "Filtrer par type :",
@@ -261,7 +261,7 @@ def render_sidebar(history_collection) -> list:
                 st.session_state[key] = True
 
             # Label enrichi avec la durée
-            label = f"{tid}\n⏱️ {duration_str} | 📦 {int(load)}kg"
+            label = f"{tid}\n️ {duration_str} |  {int(load)}kg"
 
             if st.checkbox(label, key=key):
                 selected_indices.append(original_idx)
@@ -302,11 +302,11 @@ def render_map(routes_to_display: list):
             collected = stop.get('load_after_visit', 0)
 
             if is_depot:
-                popup_html = f"<b>🏢 DÉPÔT</b><br>Camion: {truck_id}"
+                popup_html = f"<b> DÉPÔT</b><br>Camion: {truck_id}"
             else:
                 popup_html = f"""
                 <div style="font-family: sans-serif; min-width: 140px;">
-                    <h5 style="margin:0; color:{color}">🗑️ {bin_type}</h5>
+                    <h5 style="margin:0; color:{color}"> {bin_type}</h5>
                     <hr style="margin: 4px 0;">
                     <b>Ref:</b> {bin_ref}<br>
                     <b>Camion:</b> {truck_id}<br>
@@ -363,11 +363,11 @@ def main():
     kpi1, kpi2, kpi3 = st.columns(3)
 
     with kpi1:
-        st.metric("📅 Date", sim_label)
+        st.metric(" Date", sim_label)
     with kpi2:
-        st.metric("🚛 Flotte Active", f"{len(selected_routes)} Camions")
+        st.metric(" Flotte Active", f"{len(selected_routes)} Camions")
     with kpi3:
-        st.metric("⏱️ Fin Opération", format_duration_human(max_time))
+        st.metric(" Fin Opération", format_duration_human(max_time))
     # 4. Affichage final
     st_folium(map_obj, width=1600, height=700)
 

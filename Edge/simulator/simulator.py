@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto-edge")
 TOPIC = "bin/sensors_values"
 MEASURES_SIZE = 10 
-DELAY = 10 # 1 minute
+DELAY = 0.01 # 1 pour 1 seconde
 
 # Theoretical sensor height range for calculating logical ir states
 SENSOR_MAX_RANGE = 200.0 # cm 

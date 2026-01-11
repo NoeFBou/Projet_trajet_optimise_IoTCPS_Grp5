@@ -2,12 +2,11 @@ services:
   mongo:
     image: mongo:7.0
     container_name: truck-mongo
-    ports:
-      - "27018:27017"
     volumes:
       - mongo_data:/data/db
     networks:
           - global_waste_net
+        
   truck-api:
     build: .
     container_name: truck-api

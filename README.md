@@ -73,7 +73,7 @@ je le met ici quand tout sera fini
 
 ```bash
 git clone https://github.com/NoeFBou/Projet_trajet_optimise_IoTCPS_Grp5.git
-cd smart-waste-management
+cd Projet_trajet_optimise_IoTCPS_Grp5
 
 ```
 

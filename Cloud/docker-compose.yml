@@ -1,16 +1,18 @@
+version: '3.8'
+
 services:
-  mosquitto-fog:
+  mosquitto-cloud:
     image: eclipse-mosquitto
-    container_name: mosquitto-fog
+    container_name: mosquitto-cloud
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
-    restart: unless-stopped
     ports:
       - "1884:1884"
+      - "1883:1883"
     networks:
-      - fog_net
+      - cloud_net
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -18,9 +20,8 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    restart: unless-stopped
     networks:
-      - fog_net
+      - cloud_net
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
@@ -29,16 +30,16 @@ services:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_LOG_RETENTION_HOURS: 720
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    restart: unless-stopped
+    ports:
+      - "9092:9092"
     networks:
-      - fog_net
+      - cloud_net
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -46,14 +47,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
-      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     depends_on:
       - kafka
-      - zookeeper
     networks:
-      - fog_net
+      - cloud_net
 
   bridge-mqtt-kafka:
     build:
@@ -61,12 +61,66 @@ services:
       dockerfile: Dockerfile
     container_name: bridge-mqtt-kafka
     depends_on:
-      - mosquitto-fog
+      - mosquitto-cloud
       - kafka
+    environment:
+      - MQTT_BROKER=mosquitto-cloud
+      - KAFKA_SERVER=kafka:29092
     networks:
-      - fog_net
+      - cloud_net
 
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - cloud_net
+
+  osrm-backend:
+    image: osrm/osrm-backend
+    container_name: osrm-backend
+    command: "osrm-routed --algorithm mld /data/map.osrm"
+    volumes:
+      - ./osrm-data:/data
+    ports:
+      - "5000:5000"
+    networks:
+      - cloud_net
+
+  vrp-service:
+    build: ./service vrp
+    container_name: vrp-service
+    depends_on:
+      - osrm-backend
+    environment:
+      - OSRM_URL=http://osrm-backend:5000
+    networks:
+      - cloud_net
+
+  aggregator-service:
+    build: ./service aggregator
+    container_name: aggregator-service
+    depends_on:
+      - kafka
+      - vrp-service
+      - mongodb
+    environment:
+      - KAFKA_BROKER=kafka:29092
+      - VRP_URL=http://vrp-service:8000/solve_vrp
+      - TRUCK_URL=http://truck-api:5000/api/trucks
+      - MONGO_URI=mongodb://mongodb:27017/
+    ports:
+      - "5001:5000"
+    networks:
+      - cloud_net
 
 networks:
-  fog_net:
+  cloud_net:
+    name: waste_network
     driver: bridge
+
+volumes:
+  mongodb_data:

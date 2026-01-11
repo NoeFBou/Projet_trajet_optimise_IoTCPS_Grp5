@@ -20,11 +20,11 @@ def seed_data():
     sample_trucks = [
         {
             "truck_id": "T001",
-            "waste_type": "household",
+            "waste_type": "TousDechets",
             "address": "12 Rue des Forges, 75010 Paris",
             "sector": "North",
-            "capacity": 18, # In kilograms
-            "volume": 30, # In cubic meters
+            "capacity": 18,
+            "volume": 30,
             "status": "active",
             "schedule": [
                 {"date": "2025-11-20", "start_time": "08:00", "end_time": "12:00"},
@@ -33,7 +33,7 @@ def seed_data():
         },
         {
             "truck_id": "T009",
-            "waste_type": "household",
+            "waste_type": "TousDechets",
             "address": "12 Rue des Forges, 75010 Paris",
             "sector": "North",
             "capacity": 18,
@@ -45,7 +45,7 @@ def seed_data():
         },
         {
             "truck_id": "T007",
-            "waste_type": "household",
+            "waste_type": "Organique",
             "address": "12 Rue des Forges, 75010 Paris",
             "sector": "North",
             "capacity": 18,
@@ -57,11 +57,11 @@ def seed_data():
         },
         {
             "truck_id": "T002",
-            "waste_type": "recyclables",
+            "waste_type": "Organique",
             "address": "45 Avenue du Sud, 34000 Montpellier",
             "sector": "South",
-            "capacity": 25, # In kilograms
-            "volume": 30, # In cubic meters
+            "capacity": 25,
+            "volume": 30,
             "status": "maintenance",
             "schedule": [
                 {"date": "2025-11-22", "start_time": "09:00", "end_time": "14:00"}
@@ -69,7 +69,30 @@ def seed_data():
         },
         {
             "truck_id": "T003",
-            "waste_type": "glass",
+            "waste_type": "Verre",
+            "address": "8 Boulevard de l'Est, 67000 Strasbourg",
+            "sector": "East",
+            "capacity": 12,
+            "status": "active",
+            "schedule": [
+                {"date": "2025-11-23", "start_time": "07:00", "end_time": "11:00"}
+            ]
+        },
+        {
+            "truck_id": "T021",
+            "waste_type": "Recyclable",
+            "address": "45 Avenue du Sud, 34000 Montpellier",
+            "sector": "South",
+            "capacity": 25,
+            "volume": 30,
+            "status": "maintenance",
+            "schedule": [
+                {"date": "2025-11-22", "start_time": "09:00", "end_time": "14:00"}
+            ]
+        },
+        {
+            "truck_id": "T022",
+            "waste_type": "Recyclable",
             "address": "8 Boulevard de l'Est, 67000 Strasbourg",
             "sector": "East",
             "capacity": 12,
@@ -78,7 +101,6 @@ def seed_data():
                 {"date": "2025-11-23", "start_time": "07:00", "end_time": "11:00"}
             ]
         }
-    ]
 
     try:
         trucks_collection.insert_many(sample_trucks, ordered=False)

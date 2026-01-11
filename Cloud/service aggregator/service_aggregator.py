@@ -11,7 +11,7 @@ Responsabilités :
 
 Auteur : moi
 """
-
+import os
 import json
 import time
 import threading
@@ -27,14 +27,14 @@ from kafka.errors import NoBrokersAvailable
 
 # --- CONFIGURATION & CONSTANTES ---
 
-KAFKA_BROKER = "kafka:9092"
-KAFKA_TOPIC_IN = "bin-levels"
+KAFKA_BROKER = os.getenv("KAFKA_BROKER", "kafka:29092")
+KAFKA_TOPIC_IN = "bin-data"
 KAFKA_GROUP_ID = "aggregator-group"
 
 # Endpoints des microservices
-VRP_SERVICE_URL = "http://vrp-service:8000/solve_vrp"
-TRUCK_SERVICE_URL = "http://truck-service:5000/api/trucks"
-SIMULATOR_URL = "http://simulator:5000/empty"
+VRP_SERVICE_URL = os.getenv("VRP_URL", "http://vrp-service:8000/solve_vrp")
+TRUCK_SERVICE_URL = os.getenv("TRUCK_URL", "http://truck-api:5000/api/trucks")
+SIMULATOR_URL = os.getenv("SIMULATOR_URL", "http://simulator:5000/empty")
 
 # Base de données
 MONGO_URI = "mongodb://mongodb:27017/"
@@ -119,12 +119,12 @@ def start_kafka_consumer():
                             detected_type = TYPE_MAPPING.get(suffix, "general")
                         except IndexError:
                             detected_type = "general"
-
+                    weight_val = bin_data.get('weight_kg')
                     # Mise à jour de l'état local
                     BIN_STATE_DB[bin_id] = {
                         "type": detected_type,
                         "level_code": level_code,
-                        "weight": bin_data.get('weight', 0.0),
+                        "weight": weight_val,
                         "lat": coords.get('lat', 0.0),
                         "lon": coords.get('lon', 0.0),
                         "last_update": time.time()

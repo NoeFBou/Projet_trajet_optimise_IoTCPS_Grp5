@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from pymongo import MongoClient
+from pymongo import MongoClient, errors
 import os
 from datetime import datetime
 
@@ -16,8 +16,8 @@ trucks_collection = db["trucks"]
 
 # Seed database with initial data
 def seed_data():
-    
-    sample_trucks = db.trucks.insertMany([
+    trucks_collection.create_index("truck_id", unique=True)
+    sample_trucks = [
         {
             "truck_id": "T001",
             "waste_type": "household",
@@ -78,13 +78,16 @@ def seed_data():
                 {"date": "2025-11-23", "start_time": "07:00", "end_time": "11:00"}
             ]
         }
-    ])
+    ]
 
-    trucks_collection.insert_many(sample_trucks)
-    print("Database initialized with truck data.")
+    try:
+        trucks_collection.insert_many(sample_trucks, ordered=False)
+        print("Database initialized with truck data.")
+    except errors.BulkWriteError as e:
+        print("Seed data skipped: Some or all trucks already exist.")
 
 
-#seed_data()
+seed_data()
 
 
 

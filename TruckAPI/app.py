@@ -101,6 +101,7 @@ def seed_data():
                 {"date": "2025-11-23", "start_time": "07:00", "end_time": "11:00"}
             ]
         }
+        ]
 
     try:
         trucks_collection.insert_many(sample_trucks, ordered=False)

@@ -72,7 +72,7 @@ je le met ici quand tout sera fini
 ### 1. Clonage du dépôt
 
 ```bash
-git clone https://github.com/votre-user/smart-waste-management.git
+git clone https://github.com/NoeFBou/Projet_trajet_optimise_IoTCPS_Grp5.git
 cd smart-waste-management
 
 ```

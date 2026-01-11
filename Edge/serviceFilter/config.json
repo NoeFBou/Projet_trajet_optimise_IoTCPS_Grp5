@@ -1,0 +1,1432 @@
+[
+    {
+        "id": "PBL-851546-VER",
+        "type": "Verre",
+        "current_level": 174,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295794.26056,
+            "lon": 1040994.57466
+        }
+    },
+    {
+        "id": "PBL-851546-REC",
+        "type": "Recyclable",
+        "current_level": 274,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295794.26056,
+            "lon": 1040994.57466
+        }
+    },
+    {
+        "id": "PBL-851546-ORG",
+        "type": "Organique",
+        "current_level": 169,
+        "max_capacity": 660,
+        "density": 0.5,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295794.26056,
+            "lon": 1040994.57466
+        }
+    },
+    {
+        "id": "PBL-898862-VER",
+        "type": "Verre",
+        "current_level": 539,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.00568,
+            "lon": 1040953.89101
+        }
+    },
+    {
+        "id": "PBL-898862-REC",
+        "type": "Recyclable",
+        "current_level": 489,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.00568,
+            "lon": 1040953.89101
+        }
+    },
+    {
+        "id": "PBL-898862-ORG",
+        "type": "Organique",
+        "current_level": 227,
+        "max_capacity": 660,
+        "density": 0.5,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.00568,
+            "lon": 1040953.89101
+        }
+    },
+    {
+        "id": "PBL-851547-VER",
+        "type": "Verre",
+        "current_level": 455,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.70409,
+            "lon": 1041002.39996
+        }
+    },
+    {
+        "id": "PBL-851547-REC",
+        "type": "Recyclable",
+        "current_level": 40,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.70409,
+            "lon": 1041002.39996
+        }
+    },
+    {
+        "id": "PBL-851547-ORG",
+        "type": "Organique",
+        "current_level": 88,
+        "max_capacity": 660,
+        "density": 0.5,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295813.70409,
+            "lon": 1041002.39996
+        }
+    },
+    {
+        "id": "PBL-898863-VER",
+        "type": "Verre",
+        "current_level": 261,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.02723,
+            "lon": 1040936.5433
+        }
+    },
+    {
+        "id": "PBL-898863-REC",
+        "type": "Recyclable",
+        "current_level": 234,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.02723,
+            "lon": 1040936.5433
+        }
+    },
+    {
+        "id": "PBL-898863-ORG",
+        "type": "Organique",
+        "current_level": 125,
+        "max_capacity": 660,
+        "density": 0.5,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.02723,
+            "lon": 1040936.5433
+        }
+    },
+    {
+        "id": "PBL-851548-VER",
+        "type": "Verre",
+        "current_level": 317,
+        "max_capacity": 660,
+        "density": 0.35,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.39378,
+            "lon": 1041007.181
+        }
+    },
+    {
+        "id": "PBL-851548-REC",
+        "type": "Recyclable",
+        "current_level": 220,
+        "max_capacity": 660,
+        "density": 0.05,
+        "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+        "coords": {
+            "lat": 6295826.39378,
+            "lon": 1041007.181
+        }
+    },
+  {
+    "id": "PBL-010648-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "current_level": 97,
+    "max_capacity": 240,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.696224,
+      "lon": 7.283702
+    }
+  },
+  {
+    "id": "PBL-076786-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 75,
+    "current_level": 74,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699948,
+      "lon": 7.284339
+    }
+  },
+  {
+    "id": "PBL-076786-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 209,
+    "current_level": 176,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699948,
+      "lon": 7.284339
+    }
+  },
+  {
+    "id": "PBL-076786-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 155,
+    "current_level": 291,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699948,
+      "lon": 7.284339
+    }
+  },
+  {
+    "id": "PBL-076806-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 80,
+    "current_level": 157,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699245,
+      "lon": 7.28471
+    }
+  },
+  {
+    "id": "PBL-076806-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 178,
+    "current_level": 478,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699245,
+      "lon": 7.28471
+    }
+  },
+  {
+    "id": "PBL-076806-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 132,
+    "current_level": 461,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699245,
+      "lon": 7.28471
+    }
+  },
+  {
+    "id": "PBL-076807-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 192,
+    "current_level": 216,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699377,
+      "lon": 7.285276
+    }
+  },
+  {
+    "id": "PBL-076807-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 533,
+    "current_level": 217,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699377,
+      "lon": 7.285276
+    }
+  },
+  {
+    "id": "PBL-076807-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 368,
+    "current_level": 193,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699377,
+      "lon": 7.285276
+    }
+  },
+  {
+    "id": "PBL-076810-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 40,
+    "current_level": 314,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699942,
+      "lon": 7.28441
+    }
+  },
+  {
+    "id": "PBL-076810-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 119,
+    "current_level": 112,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699942,
+      "lon": 7.28441
+    }
+  },
+  {
+    "id": "PBL-076810-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 76,
+    "current_level": 494,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699942,
+      "lon": 7.28441
+    }
+  },
+  {
+    "id": "PBL-076813-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 90,
+    "current_level": 261,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699905,
+      "lon": 7.284849
+    }
+  },
+  {
+    "id": "PBL-076813-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 209,
+    "current_level": 425,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699905,
+      "lon": 7.284849
+    }
+  },
+  {
+    "id": "PBL-076813-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 132,
+    "current_level": 75,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699905,
+      "lon": 7.284849
+    }
+  },
+  {
+    "id": "PBL-076814-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 67,
+    "current_level": 364,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699891,
+      "lon": 7.285024
+    }
+  },
+  {
+    "id": "PBL-076814-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 173,
+    "current_level": 342,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699891,
+      "lon": 7.285024
+    }
+  },
+  {
+    "id": "PBL-076814-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 192,
+    "current_level": 165,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699891,
+      "lon": 7.285024
+    }
+  },
+  {
+    "id": "PBL-076816-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 52,
+    "current_level": 478,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699663,
+      "lon": 7.285326
+    }
+  },
+  {
+    "id": "PBL-076816-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 144,
+    "current_level": 344,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699663,
+      "lon": 7.285326
+    }
+  },
+  {
+    "id": "PBL-076816-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 131,
+    "current_level": 317,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699663,
+      "lon": 7.285326
+    }
+  },
+  {
+    "id": "PBL-076817-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 31,
+    "current_level": 183,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699876,
+      "lon": 7.285193
+    }
+  },
+  {
+    "id": "PBL-076817-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 79,
+    "current_level": 450,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699876,
+      "lon": 7.285193
+    }
+  },
+  {
+    "id": "PBL-076817-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 59,
+    "current_level": 471,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699876,
+      "lon": 7.285193
+    }
+  },
+  {
+    "id": "PBL-076868-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 310,
+    "current_level": 363,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699242,
+      "lon": 7.284739
+    }
+  },
+  {
+    "id": "PBL-076868-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 724,
+    "current_level": 344,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699242,
+      "lon": 7.284739
+    }
+  },
+  {
+    "id": "PBL-076868-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 537,
+    "current_level": 460,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699242,
+      "lon": 7.284739
+    }
+  },
+  {
+    "id": "PBL-076869-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 245,
+    "current_level": 481,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.698716,
+      "lon": 7.284175
+    }
+  },
+  {
+    "id": "PBL-076869-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 573,
+    "current_level": 103,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.698716,
+      "lon": 7.284175
+    }
+  },
+  {
+    "id": "PBL-076869-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 381,
+    "current_level": 95,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.698716,
+      "lon": 7.284175
+    }
+  },
+  {
+    "id": "PBL-076870-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 134,
+    "current_level": 49,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699281,
+      "lon": 7.284303
+    }
+  },
+  {
+    "id": "PBL-076870-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 332,
+    "current_level": 290,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699281,
+      "lon": 7.284303
+    }
+  },
+  {
+    "id": "PBL-076870-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 268,
+    "current_level": 285,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699281,
+      "lon": 7.284303
+    }
+  },
+  {
+    "id": "PBL-076133-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 93,
+    "current_level": 112,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700861,
+      "lon": 7.286828
+    }
+  },
+  {
+    "id": "PBL-076133-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 199,
+    "current_level": 352,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700861,
+      "lon": 7.286828
+    }
+  },
+  {
+    "id": "PBL-076133-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 170,
+    "current_level": 329,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700861,
+      "lon": 7.286828
+    }
+  },
+  {
+    "id": "PBL-076609-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 121,
+    "current_level": 366,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.701322,
+      "lon": 7.287115
+    }
+  },
+  {
+    "id": "PBL-076609-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 368,
+    "current_level": 216,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.701322,
+      "lon": 7.287115
+    }
+  },
+  {
+    "id": "PBL-076609-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 275,
+    "current_level": 70,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.701322,
+      "lon": 7.287115
+    }
+  },
+  {
+    "id": "PBL-076689-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 31,
+    "current_level": 256,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700511,
+      "lon": 7.285633
+    }
+  },
+  {
+    "id": "PBL-076689-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 116,
+    "current_level": 125,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700511,
+      "lon": 7.285633
+    }
+  },
+  {
+    "id": "PBL-076689-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 74,
+    "current_level": 367,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700511,
+      "lon": 7.285633
+    }
+  },
+  {
+    "id": "PBL-076691-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 121,
+    "current_level": 264,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.70085,
+      "lon": 7.285551
+    }
+  },
+  {
+    "id": "PBL-076691-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 281,
+    "current_level": 241,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.70085,
+      "lon": 7.285551
+    }
+  },
+  {
+    "id": "PBL-076691-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 194,
+    "current_level": 141,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.70085,
+      "lon": 7.285551
+    }
+  },
+  {
+    "id": "PBL-076692-TOU",
+    "type": "TousDechets",
+    "zone": "Le Port",
+    "daily_growth": 133,
+    "current_level": 86,
+    "max_capacity": 660,
+    "density": 0.15,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700889,
+      "lon": 7.286225
+    }
+  },
+  {
+    "id": "PBL-076692-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 111,
+    "current_level": 26,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700889,
+      "lon": 7.286225
+    }
+  },
+  {
+    "id": "PBL-076719-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 74,
+    "current_level": 243,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700563,
+      "lon": 7.286706
+    }
+  },
+  {
+    "id": "PBL-076719-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 210,
+    "current_level": 2,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700563,
+      "lon": 7.286706
+    }
+  },
+  {
+    "id": "PBL-076719-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 152,
+    "current_level": 382,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700563,
+      "lon": 7.286706
+    }
+  },
+  {
+    "id": "PBL-104578-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 801,
+    "current_level": 144,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.701214,
+      "lon": 7.285052
+    }
+  },
+  {
+    "id": "PBL-104578-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 1831,
+    "current_level": 5,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.701214,
+      "lon": 7.285052
+    }
+  },
+  {
+    "id": "PBL-104578-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 1748,
+    "current_level": 125,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.701214,
+      "lon": 7.285052
+    }
+  },
+  {
+    "id": "PBL-076548-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 105,
+    "current_level": 353,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700039,
+      "lon": 7.285395
+    }
+  },
+  {
+    "id": "PBL-076548-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 280,
+    "current_level": 21,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700039,
+      "lon": 7.285395
+    }
+  },
+  {
+    "id": "PBL-076548-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 226,
+    "current_level": 310,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700039,
+      "lon": 7.285395
+    }
+  },
+  {
+    "id": "PBL-076543-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 67,
+    "current_level": 406,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700289,
+      "lon": 7.285442
+    }
+  },
+  {
+    "id": "PBL-076543-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 225,
+    "current_level": 142,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700289,
+      "lon": 7.285442
+    }
+  },
+  {
+    "id": "PBL-076543-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 159,
+    "current_level": 198,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.700289,
+      "lon": 7.285442
+    }
+  },
+  {
+    "id": "PBL-076638-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 126,
+    "current_level": 136,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.698798,
+      "lon": 7.2854
+    }
+  },
+  {
+    "id": "PBL-076638-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 247,
+    "current_level": 41,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.698798,
+      "lon": 7.2854
+    }
+  },
+  {
+    "id": "PBL-076638-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 255,
+    "current_level": 465,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.698798,
+      "lon": 7.2854
+    }
+  },
+  {
+    "id": "PBL-076639-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 71,
+    "current_level": 210,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.698952,
+      "lon": 7.28543
+    }
+  },
+  {
+    "id": "PBL-076639-REC",
+    "type": "Recyclable",
+    "zone": "Le Port",
+    "daily_growth": 135,
+    "current_level": 17,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.698952,
+      "lon": 7.28543
+    }
+  },
+  {
+    "id": "PBL-076639-ORG",
+    "type": "Organique",
+    "zone": "Le Port",
+    "daily_growth": 143,
+    "current_level": 386,
+    "max_capacity": 660,
+    "density": 0.5,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.698952,
+      "lon": 7.28543
+    }
+  },
+  {
+    "id": "PBL-076637-VER",
+    "type": "Verre",
+    "zone": "Le Port",
+    "daily_growth": 90,
+    "current_level": 462,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.699162,
+      "lon": 7.28568
+    }
+  }
+  
+]

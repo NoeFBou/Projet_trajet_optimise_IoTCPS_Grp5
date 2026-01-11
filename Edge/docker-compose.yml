@@ -1,0 +1,56 @@
+services:
+  mosquitto-edge:
+    image: eclipse-mosquitto
+    container_name: mosquitto-edge  
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - edge_net
+      - sim_net
+
+  simulator:
+    build:
+      context: ./simulator
+      dockerfile: Dockerfile
+    depends_on:
+      - mosquitto-edge
+      - filter-service
+    networks:
+      - sim_net
+
+
+  filter-service:
+    build:
+      context: ./serviceFilter
+      dockerfile: Dockerfile
+    depends_on:
+      - anomalies-detector
+    networks:
+      - edge_net
+
+  anomalies-detector:
+    build:
+      context: ./AnomaliesDetector
+      dockerfile: Dockerfile
+    depends_on:
+      - fusion-service
+    networks:
+      - edge_net
+
+  fusion-service:
+    environment:
+      - MQTT_BROKER=host.docker.internal
+    build:
+      context: ./serviceFusion
+      dockerfile: Dockerfile
+    networks:
+      - edge_net
+
+networks:
+  edge_net:
+    driver: bridge
+  sim_net:
+    driver: bridge

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  dashboard-service:
+    build:
+      context: ./service dashboard
+      dockerfile: Dockerfile
+    container_name: dashboard-service
+    ports:
+      - "8501:8501"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/
+      - AGGREGATOR_URL=http://aggregator-service:5000/run-optimization
+      - OSRM_URL=http://osrm-backend:5000
+    networks:
+      - global_waste_net
+
+networks:
+  global_waste_net:
+    external: true
+    name: waste_network

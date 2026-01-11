@@ -1,0 +1,5 @@
+kafka-python
+requests
+schedule
+pymongo
+flask

@@ -1,0 +1,30 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: truck-mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+          - global_waste_net
+  truck-api:
+    build: .
+    container_name: truck-api
+    ports:
+      - "5002:5000"
+    environment:
+      MONGO_URI: "mongodb://truck-mongo:27017"
+      SEED_DB: "true"
+    depends_on:
+      - mongo
+    networks:
+      - global_waste_net
+
+volumes:
+  mongo_data:
+
+networks:
+  global_waste_net:
+    external: true
+    name: waste_network

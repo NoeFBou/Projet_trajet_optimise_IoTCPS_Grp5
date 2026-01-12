@@ -40,9 +40,10 @@ je le met ici quand tout sera fini
 | **Infrastructure** | Kafka, Zookeeper, Mongo | Bus de messages et persistance des données.                       |
 
 ### Truck API
-| Service            | Technologie             | Description                                                       |
-|--------------------|-------------------------|-------------------------------------------------------------------|
-| **Truck service**  | Python, http            | Expose les informations des camions disponibles                   |
+| Service            | Technologie             | Description                                     |
+|--------------------|-------------------------|-------------------------------------------------|
+| **Truck service**  | Python, http            | Expose les informations des camions disponibles |
+| **Infrastructure** | Mongo | Persistance des données.                        |
 
 ### Agent-screen
 | Service            | Technologie             | Description                                                       |

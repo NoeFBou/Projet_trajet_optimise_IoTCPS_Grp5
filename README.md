@@ -23,21 +23,21 @@ je le met ici quand tout sera fini
 
 ### Services Edge
 
-| Service            | Technologie             | Description                                                       |
-|--------------------|-------------------------|-------------------------------------------------------------------|
-| **Simulator**      | Python, mosquitto       | Simule les données capteurs des poubelles(avec bruitage/erreurs), il envoie 10 mesures au même moment pour chaque capteurs afin d'aider le filtre à se débarrasser des bruits plus facilement. |
-| **Filter Service**  | Python, http            | Filtre les données en éliminant les valeurs aberrantes et fais une moyenne des mesures afin d'obtenir une valeur fiable + Ajout de la conifguration de la poubelle dans les données (adresse, dimensions, type de déchets...).                                                           |
-| **AnomaliesDetector**| Python, http            | Vérifie la cohérence des données entre elles (capteurs ultrasons indiquant une poubelle presque rempli mais l'infrarouge situé à 75% de la poubelle indique qu'il n'y a pas d'obstacles en face de lui).                                                               |
-| **Fusion Service**  | Python, Kafka           | Calcule l'état (E1-E5) des poubelles à partir des capteurs bruts. |
+| Service            | Technologie             | Description                                                                                                                                                                                                                    |
+|--------------------|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Simulator**      | Python, mosquitto       | Simule les données capteurs des poubelles(avec bruitage/erreurs), il envoie 10 mesures au même moment pour chaque capteurs afin d'aider le filtre à se débarrasser des bruits plus facilement.                                 |
+| **Filter Service**  | Python, http            | Filtre les données en éliminant les valeurs aberrantes et fais une moyenne des mesures afin d'obtenir une valeur fiable + Ajout de la conifguration de la poubelle dans les données (adresse, dimensions, type de déchets...). |
+| **AnomaliesDetector**| Python, http            | Vérifie la cohérence des données entre elles (capteurs ultrasons indiquant une poubelle presque rempli mais l'infrarouge situé à 75% de la poubelle indique qu'il n'y a pas d'obstacles en face de lui).                       |
+| **Fusion Service**  | Python, Kafka           | Calcule l'état (E1-E5) des poubelles à partir des capteurs bruts en utilisant la méthode de Dempster-Shafer).                                                                                                                  |
 
 ### Services Cloud
-| Service            | Technologie             | Description                                                       |
-|--------------------|-------------------------|-------------------------------------------------------------------|
-| **Bridge-MQTT-KAFKA**         | Python, http          | Permet de recevoir les données envoyées par chaque poubelle  et le transmettre au dataLake qui est Kafka dans notre cas                                                            |
-| **Aggregator**     | Python, Flask           | Orchestre les demandes d'optimisation.                            |
-| **VRP Service**    | OR-Tools, FastAPI       | Résout le problème de tournée de véhicules.                       |
-| **OSRM Backend**   | C++                     | Moteur de routage géographique local.                             |
-| **Infrastructure** | Kafka, Zookeeper, Mongo | Bus de messages et persistance des données.                       |
+| Service            | Technologie             | Description                                                                                                                                                                         |
+|--------------------|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Bridge-MQTT-KAFKA**         | Python, http          | Permet de recevoir les données envoyées par chaque poubelle  et le transmettre au dataLake qui est Kafka dans notre cas                                                             |
+| **Aggregator**     | Python, Flask           | Centralisation de l'état des poubelles et déclenchement des collectes.Les tournées sont générées de manière distinctes selon le type de déchet (Verre, Recyclable, Organique, etc.) |
+| **VRP Service**    | OR-Tools, FastAPI       | Résout le problème de tournée de véhicules via le backend **OSRM** et la librairie **Google OR-Tools**. Fallbacks mathématiques si OSRM indisponible(Haversine)                                                                            |
+| **OSRM Backend**   | C++                     | Moteur de routage géographique local.                                                                                                                                               |
+| **Infrastructure** | Kafka, Zookeeper, Mongo | Bus de messages et persistance des données.                                                                                                                                         |
 
 ### Truck API
 | Service            | Technologie             | Description                                     |
@@ -46,9 +46,9 @@ je le met ici quand tout sera fini
 | **Infrastructure** | Mongo | Persistance des données.                        |
 
 ### Agent-screen
-| Service            | Technologie             | Description                                                       |
-|--------------------|-------------------------|-------------------------------------------------------------------|
-| **Dashboard**      | Streamlit, Folium       | Interface utilisateur pour les opérateurs et la visualisation.    |
+| Service            | Technologie             | Description                                                                                                   |
+|--------------------|-------------------------|---------------------------------------------------------------------------------------------------------------|
+| **Dashboard**      | Streamlit, Folium       | Interface utilisateur avec **Streamlit** pour génerer les trajets de collecte et les visualiser sur une carte |
 
 ---
 

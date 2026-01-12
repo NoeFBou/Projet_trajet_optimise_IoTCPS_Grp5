@@ -121,14 +121,18 @@ def start_kafka_consumer():
                             detected_type = "general"
                     weight_val = bin_data.get('weight_kg')
                     # Mise à jour de l'état local
+                    is_anomaly = bin_data.get("anomaly_detected", False)
                     BIN_STATE_DB[bin_id] = {
                         "type": detected_type,
                         "level_code": level_code,
                         "weight": weight_val,
                         "lat": coords.get('lat', 0.0),
                         "lon": coords.get('lon', 0.0),
+                        "anomaly": is_anomaly,
                         "last_update": time.time()
                     }
+                    if is_anomaly:
+                        print(f"[Aggregator] ⚠️ Anomalie reçue pour {bin_id} (Ignorée pour la collecte)", flush=True)
     except Exception as e:
         print(f"[Aggregator] Arrêt du consumer suite à une erreur : {e}", flush=True)
 
@@ -181,7 +185,7 @@ def prepare_vrp_payloads(bins_db: Dict, trucks: List[Dict]) -> Dict[str, Dict]:
     # 1. Filtrage des poubelles critiques (E4, E5)
     bins_by_type = {}
     for b_id, info in bins_db.items():
-        if info['level_code'] in ['E4', 'E5']:
+        if info['level_code'] in ['E4', 'E5'] and not info.get('anomaly', False):
             if info['lat'] != 0.0 and info['lon'] != 0.0:
                 b_type = info.get('type', 'general')
 
@@ -239,6 +243,51 @@ def run_optimization():
     # 1. Instantané Thread-Safe de la DB
     with DB_LOCK:
         snapshot_db = BIN_STATE_DB.copy()
+    stats = {
+        "total_pleines": 0,
+        "ignorees_anomalies": 0,
+        "par_type": {}
+    }
+
+    # log des stats des poubelles critiques à vider par type + anomalies
+    bins_by_type = {}
+    for b_id, info in snapshot_db.items():
+
+        if info['level_code'] in ['E4', 'E5']:
+
+            if info.get('anomaly', False) is True:
+                stats["ignorees_anomalies"] += 1
+                continue
+
+            if info['lat'] != 0.0 and info['lon'] != 0.0:
+                stats["total_pleines"] += 1
+                b_type = info.get('type', 'general')
+
+                if b_type not in stats["par_type"]:
+                    stats["par_type"][b_type] = 0
+                stats["par_type"][b_type] += 1
+
+                if b_type not in bins_by_type:
+                    bins_by_type[b_type] = []
+
+                bins_by_type[b_type].append({
+                    "id": b_id,
+                    "lat": info['lat'],
+                    "lon": info['lon'],
+                    "weight": info['weight']
+                })
+
+    print(f"Poubelles critiques traitées : {stats['total_pleines']}", flush=True)
+    print(f"Poubelles IGNORÉES (Anomalies) : {stats['ignorees_anomalies']}", flush=True)
+    print(f" Détail par type :", flush=True)
+    for t, count in stats["par_type"].items():
+        print(f"      - {t} : {count}", flush=True)
+    print("-----------------------------------", flush=True)
+
+    if not bins_by_type:
+        return jsonify(
+            {"status": "no_action", "message": "Aucune poubelle valide à vider (tout est vide ou en anomalie)."})
+
 
     # 2. Récupération ressources
     available_trucks = get_available_trucks()

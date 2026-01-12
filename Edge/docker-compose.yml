@@ -33,7 +33,7 @@ services:
 
   anomalies-detector:
     build:
-      context: ./AnomaliesDetector
+      context: ./anomaliesDetector
       dockerfile: Dockerfile
     depends_on:
       - fusion-service

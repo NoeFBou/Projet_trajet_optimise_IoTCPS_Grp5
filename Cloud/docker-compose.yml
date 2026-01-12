@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mosquitto-cloud:
     image: eclipse-mosquitto
@@ -54,7 +52,7 @@ services:
 
   bridge-mqtt-kafka:
     build:
-      context: ./bridge_mqtt_to_kafka
+      context: ./bridgeMqttToKafka
       dockerfile: Dockerfile
     container_name: bridge-mqtt-kafka
     depends_on:
@@ -84,7 +82,7 @@ services:
       - cloud_net
 
   vrp-service:
-    build: ./service vrp
+    build: ./serviceVrp
     container_name: vrp-service
     depends_on:
       - osrm-backend
@@ -94,7 +92,7 @@ services:
       - cloud_net
 
   aggregator-service:
-    build: ./service aggregator
+    build: ./serviceAggregator
     container_name: aggregator-service
     depends_on:
       - kafka

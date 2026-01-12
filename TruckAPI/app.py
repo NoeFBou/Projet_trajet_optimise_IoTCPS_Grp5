@@ -79,6 +79,17 @@ def seed_data():
             ]
         },
         {
+            "truck_id": "T703",
+            "waste_type": "Verre",
+            "address": "8 Boulevard de l'Est, 67000 Strasbourg",
+            "sector": "East",
+            "capacity": 12,
+            "status": "active",
+            "schedule": [
+                {"date": "2025-11-23", "start_time": "07:00", "end_time": "11:00"}
+            ]
+        },
+        {
             "truck_id": "T021",
             "waste_type": "Recyclable",
             "address": "45 Avenue du Sud, 34000 Montpellier",
@@ -92,6 +103,17 @@ def seed_data():
         },
         {
             "truck_id": "T022",
+            "waste_type": "Recyclable",
+            "address": "8 Boulevard de l'Est, 67000 Strasbourg",
+            "sector": "East",
+            "capacity": 12,
+            "status": "active",
+            "schedule": [
+                {"date": "2025-11-23", "start_time": "07:00", "end_time": "11:00"}
+            ]
+        },
+        {
+            "truck_id": "T122",
             "waste_type": "Recyclable",
             "address": "8 Boulevard de l'Est, 67000 Strasbourg",
             "sector": "East",

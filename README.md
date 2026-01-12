@@ -37,13 +37,13 @@ je le met ici quand tout sera fini
 | **Aggregator**     | Python, Flask           | Centralisation de l'état des poubelles et déclenchement des collectes.Les tournées sont générées de manière distinctes selon le type de déchet (Verre, Recyclable, Organique, etc.) |
 | **VRP Service**    | OR-Tools, FastAPI       | Résout le problème de tournée de véhicules via le backend **OSRM** et la librairie **Google OR-Tools**. Fallbacks mathématiques si OSRM indisponible(Haversine)                                                                            |
 | **OSRM Backend**   | C++                     | Moteur de routage géographique local.                                                                                                                                               |
-| **Infrastructure** | Kafka, Zookeeper, Mongo | Bus de messages et persistance des données.                                                                                                                                         |
+| **Infrastructure** | Kafka, Zookeeper, Mongo | Bus de messages et persistance des données des trajets.                                                                                                                                         |
 
 ### Truck API
 | Service            | Technologie             | Description                                     |
 |--------------------|-------------------------|-------------------------------------------------|
 | **Truck service**  | Python, http            | Expose les informations des camions disponibles |
-| **Infrastructure** | Mongo | Persistance des données.                        |
+| **Infrastructure** | Mongo | Persistance des données des camions.                        |
 
 ### Agent-screen
 | Service            | Technologie             | Description                                                                                                   |

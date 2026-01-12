@@ -1427,6 +1427,466 @@
       "lat": 43.699162,
       "lon": 7.28568
     }
+  },
+  {
+    "id": "PBL-074061-VER",
+    "type": "Verre",
+    "zone": "Vieux Nice",
+    "daily_growth": 61,
+    "current_level": 257,
+    "max_capacity": 660,
+    "density": 0.35,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.696833,
+      "lon": 7.276006
+    }
+  },
+  {
+    "id": "PBL-074061-REC",
+    "type": "Recyclable",
+    "zone": "Vieux Nice",
+    "daily_growth": 169,
+    "current_level": 121,
+    "max_capacity": 660,
+    "density": 0.05,
+    "dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },
+    "coords": {
+      "lat": 43.696833,
+      "lon": 7.276006
+    }
+  },
+  {
+    "id": "PBL-075099-ORG",
+    "type": "Organique",
+    "zone": "Vieux Nice",
+    "daily_growth": 172,
+    "current_level": 6,
+    "max_capacity": 660,
+    "density": 0.5,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.699363,
+      "lon": 7.277656
+    }
+  },
+  {
+    "id": "PBL-075101-VER",
+    "type": "Verre",
+    "zone": "Vieux Nice",
+    "daily_growth": 38,
+    "current_level": 50,
+    "max_capacity": 660,
+    "density": 0.35,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.699444,
+      "lon": 7.279397
+    }
+  },
+  {
+    "id": "PBL-075101-REC",
+    "type": "Recyclable",
+    "zone": "Vieux Nice",
+    "daily_growth": 82,
+    "current_level": 474,
+    "max_capacity": 660,
+    "density": 0.05,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.699444,
+      "lon": 7.279397
+    }
+  },
+  {
+    "id": "PBL-075101-ORG",
+    "type": "Organique",
+    "zone": "Vieux Nice",
+    "daily_growth": 63,
+    "current_level": 339,
+    "max_capacity": 660,
+    "density": 0.5,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.699444,
+      "lon": 7.279397
+    }
+  },
+  {
+    "id": "PBL-075093-VER",
+    "type": "Verre",
+    "zone": "Vieux Nice",
+    "daily_growth": 225,
+    "current_level": 366,
+    "max_capacity": 660,
+    "density": 0.35,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.699582,
+      "lon": 7.277863
+    }
+  },
+  {
+    "id": "PBL-075093-REC",
+    "type": "Recyclable",
+    "zone": "Vieux Nice",
+    "daily_growth": 561,
+    "current_level": 29,
+    "max_capacity": 660,
+    "density": 0.05,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.699582,
+      "lon": 7.277863
+    }
+  },
+  {
+    "id": "PBL-075093-ORG",
+    "type": "Organique",
+    "zone": "Vieux Nice",
+    "daily_growth": 375,
+    "current_level": 169,
+    "max_capacity": 660,
+    "density": 0.5,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.699582,
+      "lon": 7.277863
+    }
+  },
+  {
+    "id": "PBL-075094-VER",
+    "type": "Verre",
+    "zone": "Vieux Nice",
+    "daily_growth": 125,
+    "current_level": 411,
+    "max_capacity": 660,
+    "density": 0.35,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.6997,
+      "lon": 7.277976
+    }
+  },
+  {
+    "id": "PBL-075094-REC",
+    "type": "Recyclable",
+    "zone": "Vieux Nice",
+    "daily_growth": 311,
+    "current_level": 432,
+    "max_capacity": 660,
+    "density": 0.05,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.6997,
+      "lon": 7.277976
+    }
+  },
+  {
+    "id": "PBL-075094-ORG",
+    "type": "Organique",
+    "zone": "Vieux Nice",
+    "daily_growth": 186,
+    "current_level": 363,
+    "max_capacity": 660,
+    "density": 0.5,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.6997,
+      "lon": 7.277976
+    }
+  },
+  {
+    "id": "PBL-075115-VER",
+    "type": "Verre",
+    "zone": "Vieux Nice",
+    "daily_growth": 51,
+    "current_level": 19,
+    "max_capacity": 660,
+    "density": 0.35,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.69965,
+      "lon": 7.279324
+    }
+  },
+  {
+    "id": "PBL-075115-REC",
+    "type": "Recyclable",
+    "zone": "Vieux Nice",
+    "daily_growth": 136,
+    "current_level": 287,
+    "max_capacity": 660,
+    "density": 0.05,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.69965,
+      "lon": 7.279324
+    }
+  },
+  {
+    "id": "PBL-075115-ORG",
+    "type": "Organique",
+    "zone": "Vieux Nice",
+    "daily_growth": 96,
+    "current_level": 250,
+    "max_capacity": 660,
+    "density": 0.5,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.69965,
+      "lon": 7.279324
+    }
+  },
+  {
+    "id": "PBL-075116-VER",
+    "type": "Verre",
+    "zone": "Vieux Nice",
+    "daily_growth": 65,
+    "current_level": 255,
+    "max_capacity": 660,
+    "density": 0.35,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.699824,
+      "lon": 7.278096
+    }
+  },
+  {
+    "id": "PBL-899328-ORG",
+    "type": "Organique",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 23,
+    "current_level": 353,
+    "max_capacity": 660,
+    "density": 0.5,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.740325,
+      "lon": 7.234479
+    }
+  },
+  {
+    "id": "PBL-852012-VER",
+    "type": "Verre",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 68,
+    "current_level": 166,
+    "max_capacity": 660,
+    "density": 0.35,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.732846,
+      "lon": 7.276265
+    }
+  },
+  {
+    "id": "PBL-852012-REC",
+    "type": "Recyclable",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 189,
+    "current_level": 11,
+    "max_capacity": 660,
+    "density": 0.05,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.732846,
+      "lon": 7.276265
+    }
+  },
+  {
+    "id": "PBL-852012-ORG",
+    "type": "Organique",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 128,
+    "current_level": 179,
+    "max_capacity": 660,
+    "density": 0.5,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.732846,
+      "lon": 7.276265
+    }
+  },
+  {
+    "id": "PBL-851966-TOU",
+    "type": "TousDechets",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 34,
+    "current_level": 140,
+    "max_capacity": 240,
+    "density": 0.15,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.732693,
+      "lon": 7.273782
+    }
+  },
+  {
+    "id": "PBL-870060-REC",
+    "type": "Recyclable",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 244,
+    "current_level": 177,
+    "max_capacity": 660,
+    "density": 0.05,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.703834,
+      "lon": 7.265119
+    }
+  },
+  {
+    "id": "PBL-870060-ORG",
+    "type": "Organique",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 238,
+    "current_level": 5,
+    "max_capacity": 660,
+    "density": 0.5,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.703834,
+      "lon": 7.265119
+    }
+  },
+  {
+    "id": "PBL-870059-VER",
+    "type": "Verre",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 133,
+    "current_level": 70,
+    "max_capacity": 660,
+    "density": 0.35,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.703837,
+      "lon": 7.265128
+    }
+  },
+  {
+    "id": "PBL-870059-REC",
+    "type": "Recyclable",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 345,
+    "current_level": 130,
+    "max_capacity": 660,
+    "density": 0.05,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.703837,
+      "lon": 7.265128
+    }
+  },
+  {
+    "id": "PBL-870059-ORG",
+    "type": "Organique",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 331,
+    "current_level": 116,
+    "max_capacity": 660,
+    "density": 0.5,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.703837,
+      "lon": 7.265128
+    }
+  },
+  {
+    "id": "PBL-870063-VER",
+    "type": "Verre",
+    "zone": "Zone_Non_Definie",
+    "daily_growth": 137,
+    "current_level": 419,
+    "max_capacity": 660,
+    "density": 0.35,
+"dims": {
+            "h": 93,
+            "w": 48,
+            "d": 55
+        },    "coords": {
+      "lat": 43.703837,
+      "lon": 7.265128
+    }
   }
-  
 ]

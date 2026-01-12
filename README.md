@@ -91,7 +91,7 @@ docker-compose up
 
 ## ️ Utilisation
 
-Une fois les conteneurs lancés, les interfaces suivantes sont accessibles :
+Une fois tous les conteneurs lancés, les interfaces suivantes sont accessibles :
 
 ### Dashboard
 

@@ -8,7 +8,7 @@
 
 Projet réalisé dans le cadre du cours de systèmes intelligents autonomes (2025 - 2026) 
 
-Ce développement est mock d'un projet conceptualisé pendant les cours de _Fondements et défis des systèmes Cyber-Physiques_ et de _L'iot aux systèmes Cyber-Physiques_.
+Ce développement est un Proof Of Concept d'un projet conceptualisé pendant les cours de _Fondements et défis des systèmes Cyber-Physiques_ et de _L'iot aux systèmes Cyber-Physiques_. Le projet porte sur le développement d'un système de génération de trajet optimisé pour la collecte des déchets par les éboueurs, c'est-à-dire en ne passant que par les poubelles pleine. La détection se remplissage de poubelle sera fera grâce à des capteurs ultrasons situés sous le couvercle vers le bas permettant de mesurer la distance entre le sommet des déchets et le haut du couvercle. En plus, de cela nous avons des capteurs infrarouges situé à plusieurs paliers de hauteurs de la poubelle (25%, 50%, 75%) permettant de faire de la validation croisée avec l'ultrason. Enfin, nous avons des capteurs de poids afin de générer un trajet que les charges des camions puissent supporter.
 
 
 
@@ -16,49 +16,38 @@ Ce développement est mock d'un projet conceptualisé pendant les cours de _Fond
 
 ## Architecture
 
-Une solution complète basée sur une architecture services pour optimiser la collecte des déchets urbains. Ce projet intègre la fusion de données capteurs (Dempster-Shafer), la gestion de flotte en temps réel et le calcul d'itinéraires optimisés (VRP).
-Le système repose sur une communication asynchrone via Kafka/mqtt/http et une orchestration conteneurisée avec Docker.
-
 schéma :
 je le met ici quand tout sera fini 
 
 
-### Flux de données simplifié :
 
-1. **Capteurs (Simulation)** : Envoi de données brutes (Poids, Ultrasons, Infrarouge).
-2. **Service Fusion** : Analyse et décision sur le niveau de remplissage (Algorithme Dempster-Shafer).
-3. **Aggregator** : Centralisation de l'état des poubelles et déclenchement des collectes.
-4. **Service VRP** : Calcul des tournées optimales via **OSRM** et **Google OR-Tools**.
-5. **Dashboard** : Visualisation cartographique et contrôle opérationnel.
-
----
-
-## Fonctionnalités
-
-* **Routing** : Calcul et générations des trajets avec un moteur OSRM local (OpenStreetMap).
-* **Optimisation Multi-types** : Génération de tournées distinctes selon le type de déchet (Verre, Recyclable, Organique, etc.).
-* **Fusion de Données** : Utilisation de la méthode de Dempster-Shafer pour déduire le niveau de remplissage des déchets d'une poubelle à partir des données des capteurs.
-* **Dashboard** : Interface Streamlit pour génerer les trajets de collecte et les visualiser sur une carte.
-* **Simulateur des capteurs** :
-* **Filtrage des données capteurs** :
-* **Résilience** : Architecture tolérante aux pannes : Buffers Kafka, Fallbacks mathématiques si OSRM indisponible(Haversine), deduction des anomalies capteur.
-
----
-
-## Services & Composants
+### Services Edge
 
 | Service            | Technologie             | Description                                                       |
 |--------------------|-------------------------|-------------------------------------------------------------------|
-| **Fusion Service** | Python, Kafka           | Calcule l'état (E1-E5) des poubelles à partir des capteurs bruts. |
+| **Simulator**      | Python, mosquitto       | Simule les données capteurs des poubelles(avec bruitage/erreurs), il envoie 10 mesures au même moment pour chaque capteurs afin d'aider le filtre à se débarrasser des bruits plus facilement. |
+| **Filter Service**  | Python, http            | Filtre les données en éliminant les valeurs aberrantes et fais une moyenne des mesures afin d'obtenir une valeur fiable + Ajout de la conifguration de la poubelle dans les données (adresse, dimensions, type de déchets...).                                                           |
+| **AnomaliesDetector**| Python, http            | Vérifie la cohérence des données entre elles (capteurs ultrasons indiquant une poubelle presque rempli mais l'infrarouge situé à 75% de la poubelle indique qu'il n'y a pas d'obstacles en face de lui).                                                               |
+| **Fusion Service**  | Python, Kafka           | Calcule l'état (E1-E5) des poubelles à partir des capteurs bruts. |
+
+### Services Cloud
+| Service            | Technologie             | Description                                                       |
+|--------------------|-------------------------|-------------------------------------------------------------------|
+| **Bridge-MQTT-KAFKA**         | Python, http          | Permet de recevoir les données envoyées par chaque poubelle  et le transmettre au dataLake qui est Kafka dans notre cas                                                            |
 | **Aggregator**     | Python, Flask           | Orchestre les demandes d'optimisation.                            |
 | **VRP Service**    | OR-Tools, FastAPI       | Résout le problème de tournée de véhicules.                       |
-| **Dashboard**      | Streamlit, Folium       | Interface utilisateur pour les opérateurs et la visualisation.    |
 | **OSRM Backend**   | C++                     | Moteur de routage géographique local.                             |
 | **Infrastructure** | Kafka, Zookeeper, Mongo | Bus de messages et persistance des données.                       |
-| **Simulateur**     | Python, mosquitto       | Simule les données capteurs des poubelles(avec bruitage/erreurs)  |
-| **Filtre**         | Python, http            | ...                                                               |
+
+### Truck API
+| Service            | Technologie             | Description                                                       |
+|--------------------|-------------------------|-------------------------------------------------------------------|
 | **Truck service**  | Python, http            | Expose les informations des camions disponibles                   |
 
+### Agent-screen
+| Service            | Technologie             | Description                                                       |
+|--------------------|-------------------------|-------------------------------------------------------------------|
+| **Dashboard**      | Streamlit, Folium       | Interface utilisateur pour les opérateurs et la visualisation.    |
 
 ---
 
@@ -67,7 +56,7 @@ je le met ici quand tout sera fini
 ### Prérequis
 
 * [Docker](https://www.docker.com/) & Docker Compose
-* Un environnement Linux (ou WSL2 sous Windows) recommandé.
+* Un environnement windows est conseillé.
 
 ### 1. Clonage du dépôt
 
@@ -77,27 +66,25 @@ cd Projet_trajet_optimise_IoTCPS_Grp5
 
 ```
 
-### 2. Initialisation des Données Géographiques (OSRM)
-
-Le moteur de routage nécessite l'extraction de la carte (ex: Nice/PACA). Un script est fourni pour automatiser cette étape.
-
+### 2. Exécution du projet
 ```bash
-# Rendre le script exécutable
-chmod +x init_project.sh
-
-# Lancer l'initialisation (Télécharge et prépare la carte)
-./init_project.sh
-
+cd Cloud
+docker-compose up
 ```
-
-### 3. Démarrage de la Stack
-
-```bash
-docker-compose up --build
-
-```
-
 *La première exécution peut prendre quelques minutes pour construire les images et initialiser Kafka.*
+Il faut attendre que le cloud finisse de se lancer.
+```bash
+cd ../TruckAPI
+docker-compose up
+cd ../Agent-screen
+docker-compose up
+```
+Et enfin on lance le Edge pour démarrer la simulation.
+```bash
+cd ../Edge
+docker-compose up
+```
+
 
 ---
 
@@ -114,28 +101,6 @@ Une fois les conteneurs lancés, les interfaces suivantes sont accessibles :
   * Filtrer les trajets par type de camion (Verre, Organique...).
   * Consulter l'historique des collectes.
 
----
-
-## Détails Techniques
-
-### Algorithme de Fusion (Dempster-Shafer)
-
-Le `Fusion Service` combine trois sources de croyance :
-
-1. **Poids** (Densité estimée par type).
-2. **Ultrasons** (Distance mesurée).
-3. **Infrarouge** (Barrières optiques à 25%, 50%, 75%).
-Cela permet de détecter des anomalies (ex: poubelle légère mais volumineuse -> cartons non pliés) et d'assigner un niveau de confiance (`mass`) à l'état de la poubelle.
-
-### Optimisation VRP (Vehicle Routing Problem)
-
-Le problème est modélisé comme un CVRP (Capacitated VRP).
-
-* **Solver :** Google OR-Tools.
-* **Matrice de Coûts :** Calculée via OSRM (distances réelles) avec un fallback Haversine.
-* **Contraintes :** Capacité des camions, temps de travail max, compatibilité des déchets.
-
----
 
 ## Licence
 

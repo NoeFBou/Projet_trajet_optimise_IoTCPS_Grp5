@@ -105,6 +105,6 @@ Une fois tous les conteneurs lancés, les interfaces suivantes sont accessibles 
 
 ## Licence
 
-Ce projet est sous licence MIT - voir le fichier [LICENSE](https://www.google.com/search?q=LICENSE) pour plus de détails.
+Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 ---

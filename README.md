@@ -53,7 +53,7 @@ Ce développement est un Proof Of Concept d'un projet conceptualisé pendant les
 
 ### Prérequis
 
-* [Docker](https://www.docker.com/) & Docker Compose
+* [Docker](https://www.docker.com/get-started/) & [Docker Compose](https://docs.docker.com/compose/install/)
 * Un environnement windows est conseillé.
 
 ### 1. Clonage du dépôt

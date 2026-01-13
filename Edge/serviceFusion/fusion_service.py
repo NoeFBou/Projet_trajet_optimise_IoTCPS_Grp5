@@ -17,16 +17,37 @@ app = Flask(__name__)
 monitor = WasteBinMonitor()
 mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
+TYPE_TRANSLATION = {
+    "Glass": "verre",
+    "Verre": "verre",
+    "VER": "verre",
+    "glass": "verre",
+    "Plastic": "plastique",
+    "Plastique": "plastique",
+    "Recyclable": "plastique",
+    "REC": "plastique",
+    "recyclable": "plastique",
+    "Organic": "organique",
+    "Organique": "organique",
+    "ORG": "organique",
+    "organic": "organique",
+    "General": "tout_type",
+    "Tout-Venant": "tout_type",
+    "TOU": "tout_type",
+    "general": "tout_type"
+}
 
 # BUSINESS LOGIC
 def process_fusion(data):
 
     bin_id = data.get('id', 'unknown_bin')
     ir_data = data.get('ir_levels', {})
-    
+    raw_type = data.get('type', 'tout_type')
+    normalized_type = TYPE_TRANSLATION.get(raw_type, 'tout_type')
+
     # Construct the input object expected by WasteBinMonitor
     monitor_inputs = {
-        'type': data.get('type', 'all_type'),
+        'type': normalized_type,
         'weight': round( data.get('weight', 0.0), 2),
         'us1': round(data.get('us1', 0.0), 2),
         'us2': round(data.get('us2', 0.0), 2),
@@ -79,8 +100,6 @@ def process_fusion(data):
 # FLASK ROUTES
 @app.route('/receive_data', methods=['POST'])
 def receive_data_endpoint():
-    """HTTP Endpoint called by Anomaly Detector"""
-
     data = request.get_json()
     if not data:
         return '', 400
@@ -88,7 +107,6 @@ def receive_data_endpoint():
     result = process_fusion(data)
     
     if result:
-        # Return success to the caller
         return '', 200
     else:
         return '', 500

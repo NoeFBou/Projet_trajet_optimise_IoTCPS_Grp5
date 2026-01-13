@@ -7,3 +7,4 @@ Edge/mosquitto/data/
 Edge/mosquitto/log/
 Cloud/mosquitto/data/
 Cloud/mosquitto/log/
+/dataset_old

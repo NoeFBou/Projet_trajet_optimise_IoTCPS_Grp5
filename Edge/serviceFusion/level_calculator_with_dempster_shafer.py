@@ -126,23 +126,16 @@ class WasteBinMonitor:
 
         print(f"\n--- Fusion pour {w_type.upper()} ---")
 
-        # 2. Fusion MANUELLE pour capturer le conflit (k)
-        # On combine d'abord sans normaliser (normalization=False)
-        # Cela garde la masse attribuée à l'ensemble vide (frozenset()) qui représente le conflit
         m_temp = m_weight.combine_conjunctive(m_us, normalization=False)
         m_temp = m_temp.combine_conjunctive(m_ir, normalization=False)
 
-        # Le conflit est la masse qui s'est retrouvée sur l'ensemble vide
         conflit = m_temp[frozenset()]
 
-        # 3. Normalisation finale pour la décision
         m_final = m_temp.normalize()
 
-        # 4. Décision Pignistique
         best_state_val = -1
         best_state_name = None
 
-        # m_final.pignistic() peut renvoyer vide si conflit total (1.0)
         pignistic_dist = m_final.pignistic()
 
         if not pignistic_dist:
@@ -156,7 +149,7 @@ class WasteBinMonitor:
                 best_state_name = state_name
 
         print(f"Meilleure hypothèse : {best_state_name} avec proba {best_state_val:.2f}")
-        print(f"Conflit global : {conflit:.2f}")  # On affiche la variable calculée plus haut
+        print(f"Conflit global : {conflit:.2f}")
 
         return best_state_name, m_final
 

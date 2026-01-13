@@ -16,10 +16,7 @@ Ce développement est un Proof Of Concept d'un projet conceptualisé pendant les
 
 ## Architecture
 
-schéma :
-je le met ici quand tout sera fini 
-
-
+![pipeline](doc/pipeline%20(27).jpg)
 
 ### Services Edge
 

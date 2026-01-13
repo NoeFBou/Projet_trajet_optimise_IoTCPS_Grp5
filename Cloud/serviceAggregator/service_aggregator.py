@@ -132,7 +132,7 @@ def start_kafka_consumer():
                         "last_update": time.time()
                     }
                     if is_anomaly:
-                        print(f"[Aggregator] ⚠️ Anomalie reçue pour {bin_id} (Ignorée pour la collecte)", flush=True)
+                        print(f"[Aggregator] Anomalie reçue pour {bin_id} (Ignorée pour la collecte)", flush=True)
     except Exception as e:
         print(f"[Aggregator] Arrêt du consumer suite à une erreur : {e}", flush=True)
 

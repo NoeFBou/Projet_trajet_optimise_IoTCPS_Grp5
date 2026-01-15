@@ -67,20 +67,20 @@ cd Projet_trajet_optimise_IoTCPS_Grp5
 ### 2. Exécution du projet
 ```bash
 cd Cloud
-docker-compose up
+docker-compose up -d
 ```
 *La première exécution peut prendre quelques minutes pour construire les images et initialiser Kafka.*
 Il faut attendre que le cloud finisse de se lancer.
 ```bash
 cd ../TruckAPI
-docker-compose up
+docker-compose up -d
 cd ../Agent-screen
-docker-compose up
+docker-compose up -d 
 ```
 Et enfin on lance le Edge pour démarrer la simulation.
 ```bash
 cd ../Edge
-docker-compose up
+docker-compose up -d
 ```
 
 

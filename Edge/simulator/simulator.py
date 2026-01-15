@@ -11,7 +11,7 @@ MEASURES_SIZE = 10
 DELAY = 1 # 1 pour 1 seconde
 
 # Theoretical sensor height range for calculating logical ir states
-SENSOR_MAX_RANGE = 200.0 # cm 
+SENSOR_MAX_RANGE = 93.0 # cm 
 SENSOR_US_MIN = 10.0     # cm
 
 
